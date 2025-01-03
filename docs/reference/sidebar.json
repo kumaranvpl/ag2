@@ -252,6 +252,13 @@
     },
     {
       "items": [
+        "reference/messages/agent_messages"
+      ],
+      "label": "messages",
+      "type": "category"
+    },
+    {
+      "items": [
         "reference/oai/anthropic",
         "reference/oai/bedrock",
         "reference/oai/cerebras",
