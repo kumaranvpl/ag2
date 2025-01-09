@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, Owners of https://github.com/ag2ai
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -31,19 +31,19 @@ from __future__ import annotations
 import json
 import logging
 import os
-import random
 import sys
 import time
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional, Type
 
 from cohere import ClientV2 as CohereV2
 from cohere.types import ToolResult
 from openai.types.chat import ChatCompletion, ChatCompletionMessageToolCall
 from openai.types.chat.chat_completion import ChatCompletionMessage, Choice
 from openai.types.completion_usage import CompletionUsage
+from pydantic import BaseModel
 
-from autogen.oai.client_utils import logging_formatter, validate_parameter
+from autogen.oai.client_utils import FormatterProtocol, logging_formatter, validate_parameter
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:
@@ -81,8 +81,8 @@ class CohereClient:
             self.api_key
         ), "Please include the api_key in your config list entry for Cohere or set the COHERE_API_KEY env variable."
 
-        if "response_format" in kwargs and kwargs["response_format"] is not None:
-            warnings.warn("response_format is not supported for Cohere, it will be ignored.", UserWarning)
+        # Store the response format, if provided (for structured outputs)
+        self._response_format: Optional[Type[BaseModel]] = None
 
     def message_retrieval(self, response) -> list:
         """
@@ -118,6 +118,56 @@ class CohereClient:
         assert cohere_params[
             "model"
         ], "Please specify the 'model' in your config list entry to nominate the Cohere model to use."
+
+        # Handle structured output response format from Pydantic model
+        if "response_format" in params and params["response_format"] is not None:
+            self._response_format = params.get("response_format")
+
+            response_format = params["response_format"]
+
+            # Check if it's a Pydantic model
+            if hasattr(response_format, "model_json_schema"):
+                # Get the JSON schema from the Pydantic model
+                schema = response_format.model_json_schema()
+
+                def resolve_ref(ref: str, defs: dict) -> dict:
+                    """Resolve a $ref to its actual schema definition"""
+                    # Extract the definition name from "#/$defs/Name"
+                    def_name = ref.split("/")[-1]
+                    return defs[def_name]
+
+                def ensure_type_fields(obj: dict, defs: dict) -> dict:
+                    """Recursively ensure all objects in the schema have a type and properties field"""
+                    if isinstance(obj, dict):
+                        # If it has a $ref, replace it with the actual definition
+                        if "$ref" in obj:
+                            ref_def = resolve_ref(obj["$ref"], defs)
+                            # Merge the reference definition with any existing fields
+                            obj = {**ref_def, **obj}
+                            # Remove the $ref as we've replaced it
+                            del obj["$ref"]
+
+                        # Process each value recursively
+                        return {
+                            k: ensure_type_fields(v, defs) if isinstance(v, (dict, list)) else v for k, v in obj.items()
+                        }
+                    elif isinstance(obj, list):
+                        return [ensure_type_fields(item, defs) for item in obj]
+                    return obj
+
+                # Make a copy of $defs before processing
+                defs = schema.get("$defs", {})
+
+                # Process the schema
+                processed_schema = ensure_type_fields(schema, defs)
+
+                cohere_params["response_format"] = {"type": "json_object", "schema": processed_schema}
+            else:
+                raise ValueError("response_format must be a Pydantic BaseModel")
+
+        # Handle strict tools parameter for structured outputs with tools
+        if "tools" in params:
+            cohere_params["strict_tools"] = validate_parameter(params, "strict_tools", bool, False, False, None, None)
 
         # Validate allowed Cohere parameters
         # https://docs.cohere.com/reference/chat
@@ -252,6 +302,15 @@ class CohereClient:
 
             response_id = response.id
 
+        # Clean up structured output if needed
+        if self._response_format:
+            # ans = clean_return_response_format(ans)
+            try:
+                parsed_response = self._convert_json_response(ans)
+                ans = _format_json_response(parsed_response, ans)
+            except ValueError as e:
+                ans = str(e)
+
         # 3. convert output
         message = ChatCompletionMessage(
             role="assistant",
@@ -276,6 +335,34 @@ class CohereClient:
         )
 
         return response_oai
+
+    def _convert_json_response(self, response: str) -> Any:
+        """Extract and validate JSON response from the output for structured outputs.
+
+        Args:
+            response (str): The response from the API.
+
+        Returns:
+            Any: The parsed JSON response.
+        """
+        if not self._response_format:
+            return response
+
+        try:
+            # Parse JSON and validate against the Pydantic model
+            json_data = json.loads(response)
+            return self._response_format.model_validate(json_data)
+        except Exception as e:
+            raise ValueError(
+                f"Failed to parse response as valid JSON matching the schema for Structured Output: {str(e)}"
+            )
+
+
+def _format_json_response(response: Any, original_answer: str) -> str:
+    """Formats the JSON response for structured outputs using the format method if it exists."""
+    return (
+        response.format() if isinstance(response, FormatterProtocol) else clean_return_response_format(original_answer)
+    )
 
 
 def extract_to_cohere_tool_results(tool_call_id: str, content_output: str, all_tool_calls) -> list[dict[str, Any]]:
@@ -308,6 +395,15 @@ def calculate_cohere_cost(input_tokens: int, output_tokens: int, model: str) -> 
         warnings.warn(f"Cost calculation not available for {model} model", UserWarning)
 
     return total
+
+
+def clean_return_response_format(response_str: str) -> str:
+    """Clean up the response string by parsing through json library."""
+    # Parse the string to a JSON object to handle escapes
+    data = json.loads(response_str)
+
+    # Convert back to JSON string with minimal formatting
+    return json.dumps(data)
 
 
 class CohereError(Exception):
