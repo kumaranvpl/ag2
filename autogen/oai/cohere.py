@@ -184,33 +184,42 @@ class CohereClient:
             response = client.chat_stream(**cohere_params)
             # Streaming...
             ans = ""
-            for event in response:
-                if event.event_type == "text-generation":
-                    ans = ans + event.text
-                elif event.event_type == "tool-calls-generation":
-                    # When streaming, tool calls are compiled at the end into a single event_type
-                    ans = event.text
+            plan = ""
+            prompt_tokens = 0
+            completion_tokens = 0
+            for chunk in response:
+                if chunk.type == "content-delta":
+                    ans = ans + chunk.delta.message.content.text
+                elif chunk.type == "tool-plan-delta":
+                    plan = plan + chunk.delta.message.tool_plan
+                elif chunk.type == "tool-call-start":
                     cohere_finish = "tool_calls"
-                    tool_calls = []
-                    for tool_call in event.tool_calls:
-                        tool_calls.append(
-                            ChatCompletionMessageToolCall(
-                                id=str(random.randint(0, 100000)),
-                                function={
-                                    "name": tool_call.name,
-                                    "arguments": (
-                                        "" if tool_call.parameters is None else json.dumps(tool_call.parameters)
-                                    ),
-                                },
-                                type="function",
-                            )
-                        )
 
-            # Not using billed_units, but that may be better for cost purposes
-            prompt_tokens = event.response.meta.tokens.input_tokens
-            completion_tokens = event.response.meta.tokens.output_tokens
+                    # Initialize a new tool call
+                    tool_call = chunk.delta.message.tool_calls
+                    current_tool = {
+                        "id": tool_call.id,
+                        "type": "function",
+                        "function": {"name": tool_call.function.name, "arguments": ""},
+                    }
+                elif chunk.type == "tool-call-delta":
+                    # Progressively build the arguments as they stream in
+                    if current_tool is not None:
+                        current_tool["function"]["arguments"] += chunk.delta.message.tool_calls.function.arguments
+                elif chunk.type == "tool-call-end":
+                    # Append the finished tool call to the list
+                    if current_tool is not None:
+                        if tool_calls is None:
+                            tool_calls = []
+                        tool_calls.append(ChatCompletionMessageToolCall(**current_tool))
+                        current_tool = None
+                elif chunk.type == "message-start":
+                    response_id = chunk.id
+                elif chunk.type == "message-end":
+                    prompt_tokens = chunk.delta.usage.tokens.input_tokens
+                    completion_tokens = chunk.delta.usage.tokens.output_tokens
+
             total_tokens = prompt_tokens + completion_tokens
-            response_id = event.response.response_id
         else:
             response = client.chat(**cohere_params)
 
