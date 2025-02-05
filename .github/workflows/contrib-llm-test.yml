@@ -4,7 +4,7 @@
 name: Contrib tests with LLMs
 
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, synchronize]
     paths:
       - "autogen/**"
