@@ -6,7 +6,6 @@ name: Contrib tests with LLMs
 on:
   pull_request_target:
     types: [opened, synchronize]
-    branches: ["**main**"]
     paths:
       - "autogen/**"
       - "test/agentchat/contrib/**"
