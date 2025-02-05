@@ -4,8 +4,8 @@
 name: Core tests with LLMs
 
 on:
-  pull_request:
-    branches: ["main"]
+  pull_request_target:
+    # branches: ["main"]
     paths:
       - "autogen/**"
       - "test/**"
