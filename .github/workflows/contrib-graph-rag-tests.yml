@@ -21,6 +21,7 @@ permissions:
   # checks: read
   # contents: read
   # deployments: read
+
 jobs:
   GraphRagIntegrationTest-FalkorDB-Ubuntu:
     runs-on: ubuntu-latest
