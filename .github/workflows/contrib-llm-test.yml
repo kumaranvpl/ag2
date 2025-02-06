@@ -4,20 +4,15 @@
 name: Contrib tests with LLMs
 
 on:
-  push:
   pull_request_target:
-    types: [opened, synchronize]
-    # branches: ["main"]
+    branches: ["main"]
     paths:
       - "autogen/**"
       - "test/agentchat/contrib/**"
       - ".github/workflows/contrib-openai.yml"
       - "pyproject.toml"
 permissions:
-  contents: write
-  actions: write
-  checks: write
-  pull-requests: write
+  {}
 
 jobs:
   TeachableAgent:

@@ -4,7 +4,7 @@
 name: ContribGraphRagTests
 
 on:
-  pull_request:
+  pull_request_target:
     branches: ["main"]
     paths:
       - "autogen/agentchat/contrib/graph_rag/**"
