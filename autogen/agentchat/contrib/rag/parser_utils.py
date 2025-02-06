@@ -27,7 +27,7 @@ _log.setLevel(logging.INFO)
 @export_module("autogen.agentchat.contrib.rag")
 def docling_parse_docs(  # type: ignore[no-any-unimported]
     input_file_path: Union[Path, str],
-    output_dir_path: Union[Path, str],
+    output_dir_path: Union[Path, str] = "./output_dir",
 ) -> list["ConversionResult"]:
     """Convert documents into a Deep Search document format using EasyOCR
     with CPU only, and export the document and its tables to the specified

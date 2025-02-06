@@ -9,7 +9,6 @@ from typing import Any, Dict, Optional, Union
 from pydantic import BaseModel, Field
 
 from autogen import ConversableAgent, SwarmAgent, UserProxyAgent
-from autogen.agentchat.contrib.rag.docling_doc_ingest_agent import DoclingDocIngestAgent
 from autogen.agentchat.contrib.swarm_agent import (
     AFTER_WORK,
     ON_CONDITION,
@@ -17,6 +16,8 @@ from autogen.agentchat.contrib.swarm_agent import (
     SwarmResult,
     initiate_swarm_chat,
 )
+
+from .docling_doc_ingest_agent import DoclingDocIngestAgent
 
 DEFAULT_SYSTEM_MESSAGE = """
     You are a document agent.
@@ -172,12 +173,8 @@ class DocumentAgent(ConversableAgent):
             functions=[initiate_tasks],
         )
 
-        self._parser_agent = SwarmAgent(
-            name="Parser Agent",
-        )
-
         self._data_ingestion_agent = DoclingDocIngestAgent(
-            name="Data Ingestion Agent",
+            name="DataIngestionAgent",
         )
 
         self._query_agent = SwarmAgent(
