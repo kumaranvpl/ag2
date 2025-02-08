@@ -5,7 +5,7 @@
 from pathlib import Path
 from typing import Literal, Optional, Union
 
-from autogen import SwarmAgent
+from autogen import ConversableAgent
 from autogen.agentchat.contrib.rag.parser_utils import docling_parse_docs
 from autogen.agentchat.contrib.swarm_agent import SwarmResult
 
@@ -16,7 +16,7 @@ You are an expert in parsing and understanding text. You can use {DOCLING_PARSE_
 """
 
 
-class DoclingDocIngestAgent(SwarmAgent):
+class DoclingDocIngestAgent(ConversableAgent):
     """
     A DoclingDocIngestAgent is a swarm agent that ingests documents using the docling_parse_docs tool.
     """
