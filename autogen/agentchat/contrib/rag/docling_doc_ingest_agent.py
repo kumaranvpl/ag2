@@ -47,8 +47,8 @@ class DoclingDocIngestAgent(ConversableAgent):
                 else:
                     self.docling_query_engine.init_db(input_dir=parsed_docs_path)
                 
-            self._context_variables["CompletedTaskCount"] += 1
-            print("docling init:", self._context_variables, "\n", context_variables)
+            context_variables["CompletedTaskCount"] += 1
+            print("docling ingest:", context_variables, "\n", context_variables)
 
             return SwarmResult(
                 agent="TaskManagerAgent",
