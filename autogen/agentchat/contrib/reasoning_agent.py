@@ -419,9 +419,9 @@ class ReasoningAgent(AssistantAgent):
             self._user_proxy = None
             # `code_execution_config` is not given, we should remove instructions with python execution
             # This line of code filters out lines from the `tot_msg` string that contain the words 'python' or '```' (indicating Python code blocks).
-            tot_msg = "\n".join(
-                [line for line in tot_msg.split("\n") if not re.compile(r".*(python|```).*").search(line)]
-            )
+            tot_msg = "\n".join([
+                line for line in tot_msg.split("\n") if not re.compile(r".*(python|```).*").search(line)
+            ])
 
         self._thinker = AssistantAgent(name="tot_thinker", system_message=tot_msg, llm_config=self._llm_config)
         self._grader = AssistantAgent(name="tot_grader", llm_config=self._grader_llm_config)
