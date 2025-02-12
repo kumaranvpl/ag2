@@ -6,6 +6,7 @@ name: Tests with optional dependencies
 on:
   schedule:
     - cron: "0 0 * * *" # daily at midnight UTC
+  workflow_dispatch: # allows manual triggering of the workflow
   pull_request:
     branches: ["main"]
   merge_group:
@@ -58,6 +59,10 @@ jobs:
       fail-fast: false
       matrix:
         optional-dependencies:
+          - "browser-use"
+          - "commsagent-discord"
+          - "commsagent-slack"
+          - "commsagent-telegram"
           - "jupyter-executor"
           - "retrievechat"
           - "retrievechat-pgvector"
@@ -67,7 +72,6 @@ jobs:
           # - "neo4j"  # Separate test exists at contrib-graph-rag-tests.yml
           - "twilio"
           - "interop"
-          - "browser_use"
           - "crawl4ai"
           - "docs"
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -86,9 +90,9 @@ jobs:
             optional-dependencies: "retrievechat-qdrant"
           # Browser use doesn't support below python 3.11
           - python-version: "3.9"
-            optional-dependencies: "browser_use"
+            optional-dependencies: "browser-use"
           - python-version: "3.10"
-            optional-dependencies: "browser_use"
+            optional-dependencies: "browser-use"
           # Skip if os is mac or windows, python version is 3.13 and optional-dependencies is starting with retrievechat
           # Because torch and sentence_transformers creates issues while trying to install
           - os: macos-latest
@@ -121,8 +125,6 @@ jobs:
       - name: Install packages and dependencies
         run: |
           uv pip install --system -e .[test,${{ matrix.optional-dependencies }}]
-          python -c "import autogen"
-          uv pip install --system pytest-cov>=5 mock
       - name: Set AUTOGEN_USE_DOCKER based on OS
         shell: bash
         run: |
@@ -136,7 +138,6 @@ jobs:
       - name: Test import all submodules
         shell: bash
         run: |
-          uv pip install --system "requests<2.32.0"
           bash scripts/test.sh test/test_import.py
       - name: Test with pytest using optional dependency marks
         shell: bash
@@ -144,6 +145,8 @@ jobs:
           OPTIONAL_DEPENDENCIES="${{ matrix.optional-dependencies }}"
           MARKER="${OPTIONAL_DEPENDENCIES//-/_}"
           bash scripts/test-skip-llm.sh -m "$MARKER"
+      - name: Show coverage report
+        run: bash scripts/show-coverage-report.sh
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
