@@ -5,7 +5,9 @@ import math
 import random
 import re
 import warnings
-from typing import Optional
+from typing import Any, Callable, Optional, TypeVar
+
+F = TypeVar("F", bound=Callable[..., Any])
 
 from ..agent import Agent
 from ..assistant_agent import AssistantAgent
