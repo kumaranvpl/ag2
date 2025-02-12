@@ -1,10 +1,10 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-#!/usr/bin/env python3 -m pytest
+# !/usr/bin/env python3 -m pytest
 
 import os
 import random
@@ -14,20 +14,10 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 
 from autogen.agentchat.contrib.reasoning_agent import ReasoningAgent, ThinkNode, visualize_tree
+from autogen.import_utils import skip_on_missing_imports
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
-from ...conftest import reason
 
-skip_reasons = [reason]
-try:
-    from graphviz import Digraph  # noqa: F401
-
-    skip_for_dependencies = False
-    skip_reason = ""
-except ImportError as e:
-    skip_for_dependencies = True
-    skip_reason = f"dependency not installed: {e.msg}"
-    pass
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -219,7 +209,7 @@ Option 3: Another option"""
     assert max_depth_found <= agent._max_depth
 
 
-@pytest.mark.skipif(skip_for_dependencies, reason=skip_reason)
+@skip_on_missing_imports(["graphviz"], "unknown")
 @patch("graphviz.Digraph")
 def test_visualize_tree_successful_case(mock_digraph):
     """Test successful tree visualization"""
@@ -268,7 +258,7 @@ def test_visualize_tree_successful_case(mock_digraph):
     mock_graph.render.assert_called_once_with("tree_of_thoughts", view=False, format="png", cleanup=True)
 
 
-@pytest.mark.skipif(skip_for_dependencies, reason=skip_reason)
+@skip_on_missing_imports(["graphviz"], "unknown")
 @patch("graphviz.Digraph")
 def test_visualize_tree_render_failure(mock_digraph):
     """Test visualization when rendering fails"""
@@ -280,12 +270,10 @@ def test_visualize_tree_render_failure(mock_digraph):
 
     with patch("builtins.print") as mock_print:
         visualize_tree(root)
-        mock_print.assert_has_calls(
-            [
-                call("Error rendering graph: Rendering failed"),
-                call("Make sure graphviz is installed on your system: https://graphviz.org/download/"),
-            ]
-        )
+        mock_print.assert_has_calls([
+            call("Error rendering graph: Rendering failed"),
+            call("Make sure graphviz is installed on your system: https://graphviz.org/download/"),
+        ])
 
 
 if __name__ == "__main__":

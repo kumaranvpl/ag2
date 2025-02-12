@@ -1,10 +1,10 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-#!/usr/bin/env python3 -m pytest
+# !/usr/bin/env python3 -m pytest
 
 
 from autogen.agentchat.contrib.vectordb.utils import chroma_results_to_query_results, filter_results_by_distance

@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -16,22 +16,21 @@ from typing import TYPE_CHECKING, Any, Callable, TypeVar
 from openai import AzureOpenAI, OpenAI
 from openai.types.chat import ChatCompletion
 
-from autogen.logger.base_logger import BaseLogger
-from autogen.logger.logger_utils import get_current_ts, to_dict
-
-from .base_logger import LLMConfig
+from ..doc_utils import export_module
+from .base_logger import BaseLogger, LLMConfig
+from .logger_utils import get_current_ts, to_dict
 
 if TYPE_CHECKING:
-    from autogen import Agent, ConversableAgent, OpenAIWrapper
-    from autogen.oai.anthropic import AnthropicClient
-    from autogen.oai.bedrock import BedrockClient
-    from autogen.oai.cerebras import CerebrasClient
-    from autogen.oai.cohere import CohereClient
-    from autogen.oai.gemini import GeminiClient
-    from autogen.oai.groq import GroqClient
-    from autogen.oai.mistral import MistralAIClient
-    from autogen.oai.ollama import OllamaClient
-    from autogen.oai.together import TogetherClient
+    from .. import Agent, ConversableAgent, OpenAIWrapper
+    from ..oai.anthropic import AnthropicClient
+    from ..oai.bedrock import BedrockClient
+    from ..oai.cerebras import CerebrasClient
+    from ..oai.cohere import CohereClient
+    from ..oai.gemini import GeminiClient
+    from ..oai.groq import GroqClient
+    from ..oai.mistral import MistralAIClient
+    from ..oai.ollama import OllamaClient
+    from ..oai.together import TogetherClient
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +49,7 @@ def safe_serialize(obj: Any) -> str:
     return json.dumps(obj, default=default)
 
 
+@export_module("autogen.logger")
 class FileLogger(BaseLogger):
     def __init__(self, config: dict[str, Any]):
         self.config = config
@@ -94,27 +94,27 @@ class FileLogger(BaseLogger):
     ) -> None:
         """Log a chat completion."""
         thread_id = threading.get_ident()
-        source_name = None
-        if isinstance(source, str):
-            source_name = source
-        else:
-            source_name = source.name
+        source_name = (
+            source
+            if isinstance(source, str)
+            else source.name
+            if hasattr(source, "name") and source.name is not None
+            else ""
+        )
         try:
-            log_data = json.dumps(
-                {
-                    "invocation_id": str(invocation_id),
-                    "client_id": client_id,
-                    "wrapper_id": wrapper_id,
-                    "request": to_dict(request),
-                    "response": str(response),
-                    "is_cached": is_cached,
-                    "cost": cost,
-                    "start_time": start_time,
-                    "end_time": get_current_ts(),
-                    "thread_id": thread_id,
-                    "source_name": source_name,
-                }
-            )
+            log_data = json.dumps({
+                "invocation_id": str(invocation_id),
+                "client_id": client_id,
+                "wrapper_id": wrapper_id,
+                "request": to_dict(request),
+                "response": str(response),
+                "is_cached": is_cached,
+                "cost": cost,
+                "start_time": start_time,
+                "end_time": get_current_ts(),
+                "thread_id": thread_id,
+                "source_name": source_name,
+            })
 
             self.logger.info(log_data)
         except Exception as e:
@@ -125,27 +125,25 @@ class FileLogger(BaseLogger):
         thread_id = threading.get_ident()
 
         try:
-            log_data = json.dumps(
-                {
-                    "id": id(agent),
-                    "agent_name": agent.name if hasattr(agent, "name") and agent.name is not None else "",
-                    "wrapper_id": to_dict(
-                        agent.client.wrapper_id if hasattr(agent, "client") and agent.client is not None else ""
-                    ),
-                    "session_id": self.session_id,
-                    "current_time": get_current_ts(),
-                    "agent_type": type(agent).__name__,
-                    "args": to_dict(init_args),
-                    "thread_id": thread_id,
-                }
-            )
+            log_data = json.dumps({
+                "id": id(agent),
+                "agent_name": agent.name if hasattr(agent, "name") and agent.name is not None else "",
+                "wrapper_id": to_dict(
+                    agent.client.wrapper_id if hasattr(agent, "client") and agent.client is not None else ""
+                ),
+                "session_id": self.session_id,
+                "current_time": get_current_ts(),
+                "agent_type": type(agent).__name__,
+                "args": to_dict(init_args),
+                "thread_id": thread_id,
+            })
             self.logger.info(log_data)
         except Exception as e:
             self.logger.error(f"[file_logger] Failed to log new agent: {e}")
 
     def log_event(self, source: str | Agent, name: str, **kwargs: dict[str, Any]) -> None:
         """Log an event from an agent or a string source."""
-        from autogen import Agent
+        from .. import Agent
 
         # This takes an object o as input and returns a string. If the object o cannot be serialized, instead of raising an error,
         # it returns a string indicating that the object is non-serializable, along with its type's qualified name obtained using __qualname__.
@@ -154,33 +152,29 @@ class FileLogger(BaseLogger):
 
         if isinstance(source, Agent):
             try:
-                log_data = json.dumps(
-                    {
-                        "source_id": id(source),
-                        "source_name": str(source.name) if hasattr(source, "name") else source,
-                        "event_name": name,
-                        "agent_module": source.__module__,
-                        "agent_class": source.__class__.__name__,
-                        "json_state": json_args,
-                        "timestamp": get_current_ts(),
-                        "thread_id": thread_id,
-                    }
-                )
+                log_data = json.dumps({
+                    "source_id": id(source),
+                    "source_name": str(source.name) if hasattr(source, "name") else source,
+                    "event_name": name,
+                    "agent_module": source.__module__,
+                    "agent_class": source.__class__.__name__,
+                    "json_state": json_args,
+                    "timestamp": get_current_ts(),
+                    "thread_id": thread_id,
+                })
                 self.logger.info(log_data)
             except Exception as e:
                 self.logger.error(f"[file_logger] Failed to log event {e}")
         else:
             try:
-                log_data = json.dumps(
-                    {
-                        "source_id": id(source),
-                        "source_name": str(source.name) if hasattr(source, "name") else source,
-                        "event_name": name,
-                        "json_state": json_args,
-                        "timestamp": get_current_ts(),
-                        "thread_id": thread_id,
-                    }
-                )
+                log_data = json.dumps({
+                    "source_id": id(source),
+                    "source_name": str(source.name) if hasattr(source, "name") else source,
+                    "event_name": name,
+                    "json_state": json_args,
+                    "timestamp": get_current_ts(),
+                    "thread_id": thread_id,
+                })
                 self.logger.info(log_data)
             except Exception as e:
                 self.logger.error(f"[file_logger] Failed to log event {e}")
@@ -190,15 +184,13 @@ class FileLogger(BaseLogger):
         thread_id = threading.get_ident()
 
         try:
-            log_data = json.dumps(
-                {
-                    "wrapper_id": id(wrapper),
-                    "session_id": self.session_id,
-                    "json_state": json.dumps(init_args),
-                    "timestamp": get_current_ts(),
-                    "thread_id": thread_id,
-                }
-            )
+            log_data = json.dumps({
+                "wrapper_id": id(wrapper),
+                "session_id": self.session_id,
+                "json_state": json.dumps(init_args),
+                "timestamp": get_current_ts(),
+                "thread_id": thread_id,
+            })
             self.logger.info(log_data)
         except Exception as e:
             self.logger.error(f"[file_logger] Failed to log event {e}")
@@ -225,17 +217,15 @@ class FileLogger(BaseLogger):
         thread_id = threading.get_ident()
 
         try:
-            log_data = json.dumps(
-                {
-                    "client_id": id(client),
-                    "wrapper_id": id(wrapper),
-                    "session_id": self.session_id,
-                    "class": type(client).__name__,
-                    "json_state": json.dumps(init_args),
-                    "timestamp": get_current_ts(),
-                    "thread_id": thread_id,
-                }
-            )
+            log_data = json.dumps({
+                "client_id": id(client),
+                "wrapper_id": id(wrapper),
+                "session_id": self.session_id,
+                "class": type(client).__name__,
+                "json_state": json.dumps(init_args),
+                "timestamp": get_current_ts(),
+                "thread_id": thread_id,
+            })
             self.logger.info(log_data)
         except Exception as e:
             self.logger.error(f"[file_logger] Failed to log event {e}")
@@ -245,18 +235,16 @@ class FileLogger(BaseLogger):
         thread_id = threading.get_ident()
 
         try:
-            log_data = json.dumps(
-                {
-                    "source_id": id(source),
-                    "source_name": str(source.name) if hasattr(source, "name") else source,
-                    "agent_module": source.__module__,
-                    "agent_class": source.__class__.__name__,
-                    "timestamp": get_current_ts(),
-                    "thread_id": thread_id,
-                    "input_args": safe_serialize(args),
-                    "returns": safe_serialize(returns),
-                }
-            )
+            log_data = json.dumps({
+                "source_id": id(source),
+                "source_name": str(source.name) if hasattr(source, "name") else source,
+                "agent_module": source.__module__,
+                "agent_class": source.__class__.__name__,
+                "timestamp": get_current_ts(),
+                "thread_id": thread_id,
+                "input_args": safe_serialize(args),
+                "returns": safe_serialize(returns),
+            })
             self.logger.info(log_data)
         except Exception as e:
             self.logger.error(f"[file_logger] Failed to log event {e}")

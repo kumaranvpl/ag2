@@ -1,10 +1,10 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-#!/usr/bin/env python3 -m pytest
+# !/usr/bin/env python3 -m pytest
 
 import os
 import uuid
@@ -68,9 +68,9 @@ def _test_gpt_assistant_chat(credentials: Credentials) -> None:
             }
         )
 
-        ok, response = analyst._invoke_assistant(
-            [{"role": "user", "content": "How many stars microsoft/autogen has on GitHub?"}]
-        )
+        ok, response = analyst._invoke_assistant([
+            {"role": "user", "content": "How many stars microsoft/autogen has on GitHub?"}
+        ])
         executable = analyst.can_execute_function("ossinsight_data_api")
         analyst.reset()
         threads_count = len(analyst._openai_threads)
@@ -84,13 +84,13 @@ def _test_gpt_assistant_chat(credentials: Credentials) -> None:
     # check the question asked
     ask_ossinsight_mock.assert_called_once()
     question_asked = ask_ossinsight_mock.call_args[0][0].lower()
-    for word in "microsoft autogen star".split(" "):
+    for word in ["microsoft", "autogen", "star"]:
         assert word in question_asked
 
     # check the answer
     response_content = response.get("content", "").lower()
     assert len(response_content) > 0
-    for word in "microsoft autogen 123 456".split(" "):
+    for word in ["microsoft", "autogen", "123", "456"]:
         assert word in response_content
 
     assert executable is False
@@ -228,7 +228,7 @@ def test_get_assistant_files(credentials_gpt_4o_mini: Credentials) -> None:
     """
     current_file_path = os.path.abspath(__file__)
     openai_client = OpenAIWrapper(config_list=credentials_gpt_4o_mini.config_list)._clients[0]._oai_client
-    file = openai_client.files.create(file=open(current_file_path, "rb"), purpose="assistants")
+    file = openai_client.files.create(file=open(current_file_path, "rb"), purpose="assistants")  # noqa: SIM115
     name = f"For test_get_assistant_files {uuid.uuid4()}"
     gpt_assistant_api_version = detect_gpt_assistant_api_version()
 
@@ -281,8 +281,8 @@ def test_assistant_retrieval(credentials_gpt_4o_mini: Credentials) -> None:
     openai_client = OpenAIWrapper(config_list=credentials_gpt_4o_mini.config_list)._clients[0]._oai_client
     current_file_path = os.path.abspath(__file__)
 
-    file_1 = openai_client.files.create(file=open(current_file_path, "rb"), purpose="assistants")
-    file_2 = openai_client.files.create(file=open(current_file_path, "rb"), purpose="assistants")
+    file_1 = openai_client.files.create(file=open(current_file_path, "rb"), purpose="assistants")  # noqa: SIM115
+    file_2 = openai_client.files.create(file=open(current_file_path, "rb"), purpose="assistants")  # noqa: SIM115
 
     try:
         all_llm_config = {
@@ -356,8 +356,8 @@ def test_assistant_mismatch_retrieval(credentials_gpt_4o_mini: Credentials) -> N
 
     openai_client = OpenAIWrapper(config_list=credentials_gpt_4o_mini.config_list)._clients[0]._oai_client
     current_file_path = os.path.abspath(__file__)
-    file_1 = openai_client.files.create(file=open(current_file_path, "rb"), purpose="assistants")
-    file_2 = openai_client.files.create(file=open(current_file_path, "rb"), purpose="assistants")
+    file_1 = openai_client.files.create(file=open(current_file_path, "rb"), purpose="assistants")  # noqa: SIM115
+    file_2 = openai_client.files.create(file=open(current_file_path, "rb"), purpose="assistants")  # noqa: SIM115
 
     try:
         # keep it to test older version of assistant config

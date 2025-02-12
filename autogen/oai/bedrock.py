@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -38,16 +38,20 @@ import time
 import warnings
 from typing import Any, Literal
 
-import boto3
 import requests
-from botocore.config import Config
 from openai.types.chat import ChatCompletion, ChatCompletionMessageToolCall
 from openai.types.chat.chat_completion import ChatCompletionMessage, Choice
 from openai.types.completion_usage import CompletionUsage
 
-from autogen.oai.client_utils import validate_parameter
+from ..import_utils import optional_import_block, require_optional_import
+from .client_utils import validate_parameter
+
+with optional_import_block():
+    import boto3
+    from botocore.config import Config
 
 
+@require_optional_import("boto3", "bedrock")
 class BedrockClient:
     """Client for Amazon's Bedrock Converse API."""
 
@@ -175,10 +179,7 @@ class BedrockClient:
                 )
 
         # Streaming
-        if "stream" in params:
-            self._streaming = params["stream"]
-        else:
-            self._streaming = False
+        self._streaming = params.get("stream", False)
 
         # For this release we will not support streaming as many models do not support streaming with tool use
         if self._streaming:
@@ -228,11 +229,7 @@ class BedrockClient:
         finish_reason = convert_stop_reason_to_finish_reason(response["stopReason"])
         response_message = response["output"]["message"]
 
-        if finish_reason == "tool_calls":
-            tool_calls = format_tool_calls(response_message["content"])
-            # text = ""
-        else:
-            tool_calls = None
+        tool_calls = format_tool_calls(response_message["content"]) if finish_reason == "tool_calls" else None
 
         text = ""
         for content in response_message["content"]:
@@ -344,15 +341,13 @@ def oai_messages_to_bedrock_messages(
             tool_uses = []
             tool_names = []
             for tool_call in message["tool_calls"]:
-                tool_uses.append(
-                    {
-                        "toolUse": {
-                            "toolUseId": tool_call["id"],
-                            "name": tool_call["function"]["name"],
-                            "input": json.loads(tool_call["function"]["arguments"]),
-                        }
+                tool_uses.append({
+                    "toolUse": {
+                        "toolUseId": tool_call["id"],
+                        "name": tool_call["function"]["name"],
+                        "input": json.loads(tool_call["function"]["arguments"]),
                     }
-                )
+                })
                 if has_tools:
                     tool_use_messages += 1
                 tool_names.append(tool_call["function"]["name"])
@@ -366,14 +361,10 @@ def oai_messages_to_bedrock_messages(
                 last_tool_use_index = len(processed_messages) - 1
             else:
                 # Not using tools, so put in a plain text message
-                processed_messages.append(
-                    {
-                        "role": "assistant",
-                        "content": [
-                            {"text": f"Some internal function(s) that could be used: [{', '.join(tool_names)}]"}
-                        ],
-                    }
-                )
+                processed_messages.append({
+                    "role": "assistant",
+                    "content": [{"text": f"Some internal function(s) that could be used: [{', '.join(tool_names)}]"}],
+                })
         elif "tool_call_id" in message:
             if has_tools:
                 # Map the tool usage call to tool_result for Bedrock
@@ -399,12 +390,10 @@ def oai_messages_to_bedrock_messages(
                 tool_result_messages += 1
             else:
                 # Not using tools, so put in a plain text message
-                processed_messages.append(
-                    {
-                        "role": "user",
-                        "content": [{"text": f"Running the function returned: {message['content']}"}],
-                    }
-                )
+                processed_messages.append({
+                    "role": "user",
+                    "content": [{"text": f"Running the function returned: {message['content']}"}],
+                })
         elif message["content"] == "":
             # Ignoring empty messages
             pass
@@ -415,12 +404,10 @@ def oai_messages_to_bedrock_messages(
                     user_continue_message if expected_role == "user" else assistant_continue_message
                 )
 
-            processed_messages.append(
-                {
-                    "role": message["role"],
-                    "content": parse_content_parts(message=message),
-                }
-            )
+            processed_messages.append({
+                "role": message["role"],
+                "content": parse_content_parts(message=message),
+            })
 
     # We'll replace the last tool_use if there's no tool_result (occurs if we finish the conversation before running the function)
     if has_tools and tool_use_messages != tool_result_messages:
@@ -453,21 +440,17 @@ def parse_content_parts(
     for part in content:
         # part_content: Dict = part.get("content")
         if "text" in part:  # part_content:
-            content_parts.append(
-                {
-                    "text": part.get("text"),
-                }
-            )
+            content_parts.append({
+                "text": part.get("text"),
+            })
         elif "image_url" in part:  # part_content:
             image_data, content_type = parse_image(part.get("image_url").get("url"))
-            content_parts.append(
-                {
-                    "image": {
-                        "format": content_type[6:],  # image/
-                        "source": {"bytes": image_data},
-                    },
-                }
-            )
+            content_parts.append({
+                "image": {
+                    "format": content_type[6:],  # image/
+                    "source": {"bytes": image_data},
+                },
+            })
         else:
             # Ignore..
             continue

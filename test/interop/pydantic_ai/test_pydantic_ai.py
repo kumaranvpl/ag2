@@ -1,28 +1,30 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 
 import random
-import sys
 from inspect import signature
 from typing import Any, Optional
 
 import pytest
 from pydantic import BaseModel
-from pydantic_ai import RunContext
-from pydantic_ai.tools import Tool as PydanticAITool
 
 from autogen import AssistantAgent, UserProxyAgent
+from autogen.import_utils import optional_import_block, skip_on_missing_imports
 from autogen.interop import Interoperable
 from autogen.interop.pydantic_ai import PydanticAIInteroperability
 
 from ...conftest import Credentials
 
+with optional_import_block():
+    from pydantic_ai import RunContext
+    from pydantic_ai.models.test import TestModel
+    from pydantic_ai.tools import Tool as PydanticAITool
+    from pydantic_ai.usage import Usage
 
-# skip if python version is not >= 3.9
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason="Only Python 3.9 and above are supported for LangchainInteroperability"
-)
+
+@pytest.mark.interop
+@skip_on_missing_imports("pydantic_ai", "interop-pydantic-ai")
 class TestPydanticAIInteroperabilityWithotContext:
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
@@ -66,9 +68,8 @@ class TestPydanticAIInteroperabilityWithotContext:
         assert False, "No tool response found in chat messages"
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason="Only Python 3.9 and above are supported for LangchainInteroperability"
-)
+@pytest.mark.interop
+@skip_on_missing_imports("pydantic_ai", "interop-pydantic-ai")
 class TestPydanticAIInteroperabilityDependencyInjection:
     def test_dependency_injection(self) -> None:
         def f(
@@ -80,6 +81,9 @@ class TestPydanticAIInteroperabilityDependencyInjection:
             return f"{city} {date} {ctx.deps}"  # type: ignore[attr-defined]
 
         ctx = RunContext(
+            model=TestModel(),
+            usage=Usage(),
+            prompt="",
             deps=123,
             retry=0,
             messages=None,  # type: ignore[arg-type]
@@ -104,6 +108,9 @@ class TestPydanticAIInteroperabilityDependencyInjection:
             raise ValueError("Retry")
 
         ctx = RunContext(
+            model=TestModel(),
+            usage=Usage(),
+            prompt="",
             deps=123,
             retry=0,
             messages=None,  # type: ignore[arg-type]
@@ -127,9 +134,8 @@ class TestPydanticAIInteroperabilityDependencyInjection:
             assert pydantic_ai_tool.current_retry == 3
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason="Only Python 3.9 and above are supported for LangchainInteroperability"
-)
+@pytest.mark.interop
+@skip_on_missing_imports("pydantic_ai", "interop-pydantic-ai")
 class TestPydanticAIInteroperabilityWithContext:
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
@@ -175,7 +181,6 @@ class TestPydanticAIInteroperabilityWithContext:
                                 "title": "Additional Info",
                             }
                         },
-                        "required": ["additional_info"],
                         "type": "object",
                         "additionalProperties": False,
                     },
@@ -210,12 +215,3 @@ class TestPydanticAIInteroperabilityWithContext:
                 return
 
         assert False, "No tool response found in chat messages"
-
-
-@pytest.mark.skipif(sys.version_info >= (3, 9), reason="LangChain Interoperability is supported")
-class TestPydanticAIInteroperabilityIfNotSupported:
-    def test_get_unsupported_reason(self) -> None:
-        assert (
-            PydanticAIInteroperability.get_unsupported_reason()
-            == "This submodule is only supported for Python versions 3.9 and above"
-        )

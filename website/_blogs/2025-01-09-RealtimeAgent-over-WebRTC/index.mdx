@@ -17,7 +17,7 @@ tags: [Realtime API, Voice Agents, AI Tools, WebRTC]
 
 # **Realtime Voice Applications with WebRTC**
 
-In our [previous blog post](/blog/2025-01-08-RealtimeAgent-over-websocket), we introduced the [**`WebSocketAudioAdapter`**](/docs/reference/agentchat/realtime_agent/websocket_audio_adapter#websocketaudioadapter), a simple way to stream real-time audio using [WebSockets](https://fastapi.tiangolo.com/advanced/websockets/). While effective, [WebSockets](https://fastapi.tiangolo.com/advanced/websockets/) can face challenges with quality and reliability in high-latency or network-variable scenarios. Enter [WebRTC](https://webrtc.org/).
+In our [previous blog post](/docs/blog/2025-01-08-RealtimeAgent-over-websocket), we introduced the [**`WebSocketAudioAdapter`**](/docs/api-reference/autogen/agentchat/realtime/experimental/WebSocketAudioAdapter#websocketaudioadapter), a simple way to stream real-time audio using [WebSockets](https://fastapi.tiangolo.com/advanced/websockets/). While effective, [WebSockets](https://fastapi.tiangolo.com/advanced/websockets/) can face challenges with quality and reliability in high-latency or network-variable scenarios. Enter [WebRTC](https://webrtc.org/).
 
 Today, we’re excited to showcase the integration with [OpenAI Realtime API with WebRTC](https://platform.openai.com/docs/guides/realtime-webrtc), leveraging WebRTC’s peer-to-peer communication capabilities to provide a robust, low-latency, high-quality audio streaming experience directly from the browser.
 
@@ -125,73 +125,18 @@ This initial question will activate the agent, and it will respond, showcasing i
 
 ### WebRTC connection
 
-A lot of the [WebRTC](https://webrtc.org/) connection logic happens in the [website_files/static
-/WebRTC.js](https://github.com/ag2ai/realtime-agent-over-webrtc/blob/main/realtime_over_webrtc/website_files/static/WebRTC.js), so lets take a look at the code there first.
+A part of the [WebRTC](https://webrtc.org/) connection logic runs in browser,
+and it is implemented by [AG2 javascript client library](https://www.npmjs.com/package/@ag2/client)
 
-#### **WebSocket Initialization**
-The [WebSocket](https://fastapi.tiangolo.com/advanced/websockets/) is responsible for exchanging initialization data and signaling messages.
+While you would usually use npm package in your project, for simplicity in this example we are
+referencing [AG2 javascript client library](https://www.npmjs.com/package/@ag2/client) directly with:
 ```javascript
-ws = new WebSocket(webSocketUrl);
-
-ws.onmessage = async event => {
-    const message = JSON.parse(event.data);
-    console.info("Received Message from AG2 backend", message);
-    if (message.type === "ag2.init") {
-        await openRTC(message.config); // Starts the WebRTC connection
-        return;
-    }
-    if (dc) {
-        dc.send(JSON.stringify(message)); // Sends data via DataChannel
-    } else {
-        console.log("DC not ready yet", message);
-    }
-};
+<script src="https://github.com/ag2ai/ag2-js-client/releases/download/v0.2.0/index.global.js"></script>
 ```
-
-#### **WebRTC Setup**
-This block configures the [WebRTC](https://webrtc.org/) connection, adds audio tracks, and initializes the `DataChannel`.
+And code snippet to connect to the AG2 server is as follows:
 ```javascript
-async function openRTC(data) {
-    const EPHEMERAL_KEY = data.client_secret.value;
-
-    // Set up to play remote audio
-    const audioEl = document.createElement("audio");
-    audioEl.autoplay = true;
-    pc.ontrack = e => audioEl.srcObject = e.streams[0];
-
-    // Add microphone input as local audio track
-    const ms = await navigator.mediaDevices.getUserMedia({ audio: true });
-    pc.addTrack(ms.getTracks()[0]);
-
-    // Create a DataChannel
-    dc = pc.createDataChannel("oai-events");
-    dc.addEventListener("message", e => {
-        const message = JSON.parse(e.data);
-        if (message.type.includes("function")) {
-            ws.send(e.data); // Forward function messages to WebSocket
-        }
-    });
-
-    // Create and send an SDP offer
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-
-    // Send the offer to OpenAI
-    const baseUrl = "https://api.openai.com/v1/realtime";
-    const sdpResponse = await fetch(`${baseUrl}?model=${data.model}`, {
-        method: "POST",
-        body: offer.sdp,
-        headers: {
-            Authorization: `Bearer ${EPHEMERAL_KEY}`,
-            "Content-Type": "application/sdp"
-        },
-    });
-
-    // Set the remote SDP answer
-    const answer = { type: "answer", sdp: await sdpResponse.text() };
-    await pc.setRemoteDescription(answer);
-    console.log("Connected to OpenAI WebRTC");
-}
+    const webRTC = new ag2client.WebRTC(socketUrl)
+    await webRTC.connect();
 ```
 
 ### Server implementation
