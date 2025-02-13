@@ -14,7 +14,6 @@ from .document_utils import handle_input
 
 with optional_import_block():
     from docling.datamodel.base_models import InputFormat
-    from docling.datamodel.document import ConversionResult
     from docling.datamodel.pipeline_options import AcceleratorDevice, AcceleratorOptions, PdfPipelineOptions
     from docling.document_converter import DocumentConverter, PdfFormatOption
 
@@ -83,7 +82,7 @@ def docling_parse_docs(  # type: ignore[no-any-unimported]
     # Export results
     output_dir = Path(output_dir_path)
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     conv_files = []
 
     for res in conv_results:
@@ -91,14 +90,14 @@ def docling_parse_docs(  # type: ignore[no-any-unimported]
         doc_filename = res.input.file.stem
         _log.debug(f"Document {res.input.file.name} converted.\nSaved markdown output to: {out_path!s}")
         _log.debug(res.document._export_to_indented_text(max_text_len=16))
-        
+
         if "markdown" in output_formats:
             # Export Docling document format to markdown:
             output_file = out_path / f"{doc_filename}.md"
             with output_file.open("w") as fp:
                 fp.write(res.document.export_to_markdown())
                 conv_files.append(output_file)
-        
+
         if "json" in output_formats:
             # Export Docling document format to json
             output_file = out_path / f"{doc_filename}.json"

@@ -4,8 +4,8 @@
 
 import logging
 import os
-from typing import Any, Optional
 from pathlib import Path
+from typing import Any, Optional
 
 from autogen.import_utils import optional_import_block, require_optional_import
 
@@ -127,9 +127,7 @@ class DoclingMdQueryEngine:
         return str(response)
 
     def add_docs(
-        self, 
-        new_doc_dir: Optional[Path | str] = None, 
-        new_doc_paths: Optional[list[Path | str]] = None
+        self, new_doc_dir: Optional[Path | str] = None, new_doc_paths: Optional[list[Path | str]] = None
     ) -> None:
         """
         Add additional documents to the existing vector index.

@@ -30,7 +30,7 @@ DEFAULT_SYSTEM_MESSAGE = """
 TASK_MANAGER_NAME = "TaskManagerAgent"
 TASK_MANAGER_SYSTEM_MESSAGE = """
     You are a task manager agent. You would only do the following 2 tasks:
-    1. You update the context variables based on the task decisions (DocumentTask) from the DocumentTriageAgent. 
+    1. You update the context variables based on the task decisions (DocumentTask) from the DocumentTriageAgent.
         i.e. output
         {
             "ingestions": [
@@ -52,12 +52,13 @@ TASK_MANAGER_SYSTEM_MESSAGE = """
             ]
         }
     2. You would hand off control to the appropriate agent based on the context variables.
-    
+
     Please don't output anything else.
     """
 DEFAULT_ERROR_SWARM_MESSAGE: str = """
 Document Agent failed to perform task.
 """
+
 
 class QueryType(Enum):
     RAG_QUERY = "RAG_QUERY"
@@ -81,10 +82,7 @@ class DocumentTask(BaseModel):
 
 
 class DocumentTriageAgent(ConversableAgent):
-    def __init__(
-        self,
-        llm_config: Dict[str, Any]
-    ):
+    def __init__(self, llm_config: Dict[str, Any]):
         # Add the structured message to the LLM configuration
         structured_config_list = deepcopy(llm_config)
         for config in structured_config_list["config_list"]:
@@ -145,10 +143,11 @@ class DocumentAgent(ConversableAgent):
         }
 
         self._triage_agent = DocumentTriageAgent(llm_config=llm_config)
+
         def initiate_tasks(
-            ingestions: list[Ingest], 
-            queries: list[Query], 
-            context_variables: dict # type: ignore[type-arg]
+            ingestions: list[Ingest],
+            queries: list[Query],
+            context_variables: dict,  # type: ignore[type-arg]
         ) -> SwarmResult:
             print("initiate_tasks context_variables", context_variables)
             if "TaskInitiated" in context_variables:
@@ -157,10 +156,10 @@ class DocumentAgent(ConversableAgent):
             context_variables["QueriesToRun"] = [query for query in queries]
             context_variables["TaskInitiated"] = True
             return SwarmResult(
-                values="Updated context variables with task decisions", 
+                values="Updated context variables with task decisions",
                 context_variables=context_variables,
-                agent=TASK_MANAGER_NAME)
-
+                agent=TASK_MANAGER_NAME,
+            )
 
         self._task_manager_agent = ConversableAgent(
             name=TASK_MANAGER_NAME,
@@ -168,21 +167,18 @@ class DocumentAgent(ConversableAgent):
             llm_config=llm_config,
             functions=[initiate_tasks],
         )
-        
+
         register_hand_off(
             agent=self._triage_agent,
             hand_to=[
                 AfterWork(self._task_manager_agent),
             ],
         )
-        
+
         query_engine = DoclingMdQueryEngine()
-        self._data_ingestion_agent = DoclingDocIngestAgent(
-            llm_config=llm_config,
-            query_engine=query_engine
-        )
-        
-        def execute_rag_query(context_variables: dict) -> SwarmResult: # type: ignore[type-arg]
+        self._data_ingestion_agent = DoclingDocIngestAgent(llm_config=llm_config, query_engine=query_engine)
+
+        def execute_rag_query(context_variables: dict) -> SwarmResult:  # type: ignore[type-arg]
             query = context_variables["QueriesToRun"][0]["query"]
             answer = query_engine.query(query)
             context_variables["QueriesToRun"].pop(0)
@@ -195,7 +191,7 @@ class DocumentAgent(ConversableAgent):
             system_message="You are a query agent. You answer the user's questions only using the query function provided to you.",
             llm_config=llm_config,
             functions=[execute_rag_query],
-        )        
+        )
 
         self._summary_agent = ConversableAgent(
             name="SummaryAgent",
@@ -209,78 +205,84 @@ class DocumentAgent(ConversableAgent):
 
         def has_query_tasks(agent: ConversableAgent, messages: List[Dict[str, Any]]) -> bool:
             print("context_variables", agent._context_variables)
-            if(len(agent.get_context("DocumentsToIngest"))>0):
+            if len(agent.get_context("DocumentsToIngest")) > 0:
                 return False
             return len(agent.get_context("QueriesToRun")) > 0
 
         def summary_task(agent: ConversableAgent, messages: List[Dict[str, Any]]) -> bool:
-            return len(agent.get_context("DocumentsToIngest")) == 0 and len(agent.get_context("QueriesToRun")) == 0 and agent.get_context("CompletedTaskCount")
+            return (
+                len(agent.get_context("DocumentsToIngest")) == 0
+                and len(agent.get_context("QueriesToRun")) == 0
+                and agent.get_context("CompletedTaskCount")
+            )
 
         register_hand_off(
             agent=self._task_manager_agent,
             hand_to=[
                 OnCondition(
-                    self._data_ingestion_agent, 
+                    self._data_ingestion_agent,
                     "If there are any DocumentsToIngest in context variables, transfer to data ingestion agent",
-                    available=has_ingest_tasks),
+                    available=has_ingest_tasks,
+                ),
                 OnCondition(
-                    self._query_agent, 
+                    self._query_agent,
                     "If there are any QueriesToRun in context variables and no DocumentsToIngest, transfer to query_agent",
-                    available=has_query_tasks),
+                    available=has_query_tasks,
+                ),
                 OnCondition(
-                    self._summary_agent, 
+                    self._summary_agent,
                     "If there are no DocumentsToIngest or QueriesToRun in context variables, transfer to summary_agent",
-                    available=summary_task),                
-            ]
+                    available=summary_task,
+                ),
+            ],
         )
 
         register_hand_off(
             agent=self._data_ingestion_agent,
             hand_to=[
                 AfterWork(self._task_manager_agent),
-            ]
+            ],
         )
         register_hand_off(
             agent=self._query_agent,
             hand_to=[
                 AfterWork(self._task_manager_agent),
-            ]
+            ],
         )
 
         register_hand_off(
             agent=self._summary_agent,
             hand_to=[
                 AfterWork(AfterWorkOption.TERMINATE),
-            ]
+            ],
         )
         self.register_reply([Agent, None], DocumentAgent.generate_inner_swarm_reply)
-        
 
     def generate_inner_swarm_reply(
         self,
-        messages: Union[list[dict],str, None] = None, # type: ignore[type-arg]
+        messages: Union[list[dict], str, None] = None,  # type: ignore[type-arg]
         sender: Optional[Agent] = None,
         config: Optional[OpenAIWrapper] = None,
-    ) -> tuple[bool, Union[str, dict, None]]: # type: ignore[type-arg]
+    ) -> tuple[bool, Union[str, dict, None]]:  # type: ignore[type-arg]
         context_variables = {
             "CompletedTaskCount": 0,
             "DocumentsToIngest": [],
             "QueriesToRun": [],
             "QueryResults": [],
         }
-        swarm_agents=[
-            self._triage_agent, 
-            self._task_manager_agent, 
-            self._data_ingestion_agent, 
-            self._query_agent, 
-            self._summary_agent
+        swarm_agents = [
+            self._triage_agent,
+            self._task_manager_agent,
+            self._data_ingestion_agent,
+            self._query_agent,
+            self._summary_agent,
         ]
         chat_result, context_variables, last_speaker = initiate_swarm_chat(
-            initial_agent=self._triage_agent,  
+            initial_agent=self._triage_agent,
             agents=swarm_agents,
             messages=self._get_document_input_message(messages),
-            context_variables=context_variables,  
-            after_work=AfterWorkOption.TERMINATE,  
+            context_variables=context_variables,
+            after_work=AfterWorkOption.TERMINATE,
         )
         if last_speaker != self._summary_agent:
             return False, DEFAULT_ERROR_SWARM_MESSAGE
@@ -289,12 +291,16 @@ class DocumentAgent(ConversableAgent):
     def _init_swarm_agents(self, agents: list[ConversableAgent]) -> None:
         for agent in agents:
             agent.reset()
-            
-    def _get_document_input_message(
-        self, messages: Union[list[dict],str, None]) -> str: # type: ignore[type-arg]
+
+    def _get_document_input_message(self, messages: Union[list[dict], str, None]) -> str:  # type: ignore[type-arg]
         if isinstance(messages, str):
             return messages
-        elif isinstance(messages, list) and len(messages) > 0 and "content" in messages[-1] and isinstance(messages[-1]["content"], str):
+        elif (
+            isinstance(messages, list)
+            and len(messages) > 0
+            and "content" in messages[-1]
+            and isinstance(messages[-1]["content"], str)
+        ):
             return messages[-1]["content"]
         else:
             raise NotImplementedError("Invalid messages format. Must be a list of messages or a string.")

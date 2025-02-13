@@ -7,9 +7,10 @@ from typing import Literal, Optional, Union
 
 from autogen import ConversableAgent
 from autogen.agentchat.contrib.rag.parser_utils import docling_parse_docs
-from .document_utils import preprocess_path
-from .docling_query_engine import DoclingMdQueryEngine
 from autogen.agentchat.contrib.swarm_agent import SwarmResult
+
+from .docling_query_engine import DoclingMdQueryEngine
+from .document_utils import preprocess_path
 
 DOCLING_PARSE_TOOL_NAME = "docling_parse_docs"
 
@@ -26,27 +27,26 @@ class DoclingDocIngestAgent(ConversableAgent):
     def __init__(
         self,
         name: str = "DoclingDocIngestAgent",
-        llm_config: Optional[Union[dict, Literal[False]]] = None, # type: ignore[type-arg]
+        llm_config: Optional[Union[dict, Literal[False]]] = None,  # type: ignore[type-arg]
         parsed_docs_path: Union[Path, str] = "./parsed_docs",
         query_engine: Optional[DoclingMdQueryEngine] = None,
-    ):  
+    ):
         if query_engine:
             self.docling_query_engine = query_engine
         else:
             self.docling_query_engine = DoclingMdQueryEngine()
 
         parsed_docs_path = preprocess_path(str_or_path=parsed_docs_path)
-        def data_ingest_task(context_variables: dict) -> SwarmResult: # type: ignore[type-arg]
+
+        def data_ingest_task(context_variables: dict) -> SwarmResult:  # type: ignore[type-arg]
             tasks = context_variables.get("DocumentsToIngest", [])
             while tasks:
                 task = tasks.pop()
-                input_file_path=task["path_or_url"]
+                input_file_path = task["path_or_url"]
                 output_files = docling_parse_docs(
-                    input_file_path=input_file_path,
-                    output_dir_path=parsed_docs_path,
-                    output_formats=["markdown"]
+                    input_file_path=input_file_path, output_dir_path=parsed_docs_path, output_formats=["markdown"]
                 )
-                
+
                 # Limit to one output markdown file for now.
                 if output_files:
                     output_file = output_files[0]
@@ -55,14 +55,14 @@ class DoclingDocIngestAgent(ConversableAgent):
                             self.docling_query_engine.init_db(input_doc_paths=[output_file])
                         else:
                             self.docling_query_engine.add_docs(new_doc_paths=[output_file])
-                
+
             context_variables["CompletedTaskCount"] += 1
             print("docling ingest:", context_variables, "\n", context_variables)
 
             return SwarmResult(
                 agent="TaskManagerAgent",
-                values=f"Data Ingestion Task Completed for {input_file_path}", 
-                context_variables=context_variables
+                values=f"Data Ingestion Task Completed for {input_file_path}",
+                context_variables=context_variables,
             )
 
         super().__init__(

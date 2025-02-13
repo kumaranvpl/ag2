@@ -103,11 +103,11 @@ def list_files(directory: Union[Path, str]) -> list[Path]:
 
 
 @export_module("autogen.agentchat.contrib.rag")
-def handle_input(input_path: Union[Path, str], output_dir: Union[Path, str]="./output") -> list[Path]:
+def handle_input(input_path: Union[Path, str], output_dir: Union[Path, str] = "./output") -> list[Path]:
     """Process the input string and return the appropriate file paths"""
 
     output_dir = preprocess_path(str_or_path=output_dir, is_dir=True, mk_path=True)
-    
+
     if isinstance(input_path, str) and is_url(input_path):
         _logger.info("Detected URL. Downloading content...")
         return [download_url(url=input_path, output_dir=output_dir)]
@@ -124,10 +124,7 @@ def handle_input(input_path: Union[Path, str], output_dir: Union[Path, str]="./o
 
 
 def preprocess_path(
-    str_or_path: Union[Path, str], 
-    mk_path: bool=True,
-    is_file: bool=False, 
-    is_dir: bool=True
+    str_or_path: Union[Path, str], mk_path: bool = True, is_file: bool = False, is_dir: bool = True
 ) -> Path:
     """Preprocess the path for file operations.
 
@@ -140,7 +137,7 @@ def preprocess_path(
     Returns:
         Path: The preprocessed path.
     """
-    
+
     # Convert the input to a Path object if it's a string
     temp_path = Path(str_or_path)
 
