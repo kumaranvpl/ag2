@@ -500,6 +500,14 @@ def _satisfies_criteria(value: Any, criteria_values: Any) -> bool:
 
 
 def generate_response_format_model(response_format: dict[str, Any]) -> BaseModel:
+    """Generate a Pydantic model from a response format dictionary.
+
+    Args:
+        response_format (dict): A dictionary representing the response format in OpenAPI format.
+
+    Returns:
+        BaseModel: A Pydantic model class representing the response format.
+    """
     with TemporaryDirectory() as d:
         temp_dir = Path(d)
         output = temp_dir / "model.py"
