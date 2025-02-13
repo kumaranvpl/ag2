@@ -203,19 +203,47 @@ class CohereClient:
     def create(self, params: dict) -> ChatCompletion:
         messages = params.get("messages", [])
         client_name = params.get("client_name") or "AG2"
+        cohere_tool_names = set()
+        tool_calls_modified_ids = set()
 
         # Parse parameters to the Cohere API's parameters
         cohere_params = self.parse_params(params)
 
         cohere_params["messages"] = messages
-
+        
+        if "tools" in params:
+            cohere_tool_names = set([tool["function"]["name"] for tool in params["tools"]])
+            cohere_params["tools"] = params["tools"]
+            
         # Strip out name
         for message in cohere_params["messages"]:
-            if "name" in message:
-                del message["name"]
-
-        if "tools" in params:
-            cohere_params["tools"] = params["tools"]
+            message_name = message.pop("name", "")
+            # Extract and prepend name to content or tool_plan if available
+            message["content"] = f"{message_name}: {(message.get("content") or message.get("tool_plan"))}" if message_name else (message.get("content") or message.get("tool_plan"))
+            
+            # Handle tool calls
+            if message.get("tool_calls") is not None and len(message["tool_calls"]) > 0:
+                
+                message["tool_plan"] = message.get("tool_plan", message["content"])
+                del message["content"] # Remove content as tool_plan is prioritized
+                
+                # If tool call name is missing or not recognized, modify role and content
+                for tool_call in message["tool_calls"] or []:
+                    if (not tool_call.get("function", {}).get("name")) or tool_call.get("function", {}).get(
+                        "name"
+                    ) not in cohere_tool_names:
+                        message["role"] = "assistant"
+                        message["content"] = f"{message.pop("tool_plan",'')}{str(message['tool_calls'])}"
+                        tool_calls_modified_ids = tool_calls_modified_ids.union(set([tool_call.get("id") for tool_call in message["tool_calls"]]))
+                        del message["tool_calls"]
+                        break
+            
+            # Adjust role if message comes from a tool with a modified ID
+            if message.get("role") == "tool":
+                tool_id = message.get("tool_call_id")
+                if tool_id in tool_calls_modified_ids:
+                    message["role"] = "user"
+                    del message["tool_call_id"] # Remove the tool call ID
 
         # We use chat model by default
         client = CohereV2(api_key=self.api_key, client_name=client_name)
@@ -274,6 +302,7 @@ class CohereClient:
             response = client.chat(**cohere_params)
 
             if response.message.tool_calls is not None:
+                ans = response.message.tool_plan
                 cohere_finish = "tool_calls"
                 tool_calls = []
                 for tool_call in response.message.tool_calls:
