@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from autogen import Agent, ConversableAgent, UserProxyAgent
-from autogen.agentchat.contrib.rag.docling_query_engine import DoclingQueryEngine
+from autogen import Agent, ConversableAgent
+from autogen.agentchat.contrib.rag.docling_query_engine import DoclingMdQueryEngine
 from autogen.agentchat.contrib.swarm_agent import (
     AfterWork,
     AfterWorkOption,
@@ -29,29 +29,31 @@ DEFAULT_SYSTEM_MESSAGE = """
 """
 TASK_MANAGER_NAME = "TaskManagerAgent"
 TASK_MANAGER_SYSTEM_MESSAGE = """
-    You are a task manager agent. You would do the following:
-    1. You update the context variables based on the task decisions (DocumentTask) from the DocumentTriageAgent.
-    i.e. output
-    {
-        "ingestions": [
-            {
-                "path_or_url": "path_or_url"
-            }
-        ],
-        "queries": [
-            {
-                "query_type": "RAG_QUERY",
-                "query": "query"
-            }
-        ],
-        "query_results": [
-            {
-                "query": "query",
-                "result": "result"
-            }
-        ]
-    }
+    You are a task manager agent. You would only do the following 2 tasks:
+    1. You update the context variables based on the task decisions (DocumentTask) from the DocumentTriageAgent. 
+        i.e. output
+        {
+            "ingestions": [
+                {
+                    "path_or_url": "path_or_url"
+                }
+            ],
+            "queries": [
+                {
+                    "query_type": "RAG_QUERY",
+                    "query": "query"
+                }
+            ],
+            "query_results": [
+                {
+                    "query": "query",
+                    "result": "result"
+                }
+            ]
+        }
     2. You would hand off control to the appropriate agent based on the context variables.
+    
+    Please don't output anything else.
     """
 DEFAULT_ERROR_SWARM_MESSAGE: str = """
 Document Agent failed to perform task.
@@ -81,9 +83,7 @@ class DocumentTask(BaseModel):
 class DocumentTriageAgent(ConversableAgent):
     def __init__(
         self,
-        llm_config: Dict[str, Any],
-        *args,
-        **kwargs,
+        llm_config: Dict[str, Any]
     ):
         # Add the structured message to the LLM configuration
         structured_config_list = deepcopy(llm_config)
@@ -110,7 +110,6 @@ class DocumentAgent(ConversableAgent):
         name: str = "Document_Agent",
         llm_config: Dict[str, Any] = {},
         system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
-        **kwargs,
     ):
         """
         Initialize the DocumentAgent.
@@ -136,7 +135,6 @@ class DocumentAgent(ConversableAgent):
             system_message=system_message,
             llm_config=llm_config,
             human_input_mode="NEVER",
-            **kwargs,
         )
         self.register_reply([ConversableAgent, None], self.generate_inner_swarm_reply, position=0)
 
@@ -147,7 +145,11 @@ class DocumentAgent(ConversableAgent):
         }
 
         self._triage_agent = DocumentTriageAgent(llm_config=llm_config)
-        def initiate_tasks(ingestions: list[Ingest], queries: list[Query], context_variables: dict) -> SwarmResult:
+        def initiate_tasks(
+            ingestions: list[Ingest], 
+            queries: list[Query], 
+            context_variables: dict # type: ignore[type-arg]
+        ) -> SwarmResult:
             print("initiate_tasks context_variables", context_variables)
             if "TaskInitiated" in context_variables:
                 return SwarmResult(values="Task already initiated", context_variables=context_variables)
@@ -174,13 +176,13 @@ class DocumentAgent(ConversableAgent):
             ],
         )
         
-        query_engine = DoclingQueryEngine()
+        query_engine = DoclingMdQueryEngine()
         self._data_ingestion_agent = DoclingDocIngestAgent(
             llm_config=llm_config,
             query_engine=query_engine
         )
         
-        def execute_rag_query(context_variables: dict) -> SwarmResult:
+        def execute_rag_query(context_variables: dict) -> SwarmResult: # type: ignore[type-arg]
             query = context_variables["QueriesToRun"][0]["query"]
             answer = query_engine.query(query)
             context_variables["QueriesToRun"].pop(0)
@@ -245,12 +247,6 @@ class DocumentAgent(ConversableAgent):
             ]
         )
 
-        user_agent = UserProxyAgent(
-            name="UserAgent",
-            system_message="A human admin.",
-            human_input_mode="ALWAYS",
-        )
-
         register_hand_off(
             agent=self._summary_agent,
             hand_to=[
@@ -262,10 +258,10 @@ class DocumentAgent(ConversableAgent):
 
     def generate_inner_swarm_reply(
         self,
-        messages: Union[list[dict],str, None] = None,
+        messages: Union[list[dict],str, None] = None, # type: ignore[type-arg]
         sender: Optional[Agent] = None,
         config: Optional[OpenAIWrapper] = None,
-    ) -> tuple[bool, Union[str, dict, None]]:
+    ) -> tuple[bool, Union[str, dict, None]]: # type: ignore[type-arg]
         context_variables = {
             "CompletedTaskCount": 0,
             "DocumentsToIngest": [],
@@ -284,7 +280,7 @@ class DocumentAgent(ConversableAgent):
             agents=swarm_agents,
             messages=self._get_document_input_message(messages),
             context_variables=context_variables,  
-            after_work=AfterWork(AfterWorkOption.TERMINATE),  
+            after_work=AfterWorkOption.TERMINATE,  
         )
         if last_speaker != self._summary_agent:
             return False, DEFAULT_ERROR_SWARM_MESSAGE
@@ -295,10 +291,10 @@ class DocumentAgent(ConversableAgent):
             agent.reset()
             
     def _get_document_input_message(
-        self, messages: Union[list[dict[str, Any]], str]) -> str:
+        self, messages: Union[list[dict],str, None]) -> str: # type: ignore[type-arg]
         if isinstance(messages, str):
             return messages
-        elif isinstance(messages, list):
+        elif isinstance(messages, list) and len(messages) > 0 and "content" in messages[-1] and isinstance(messages[-1]["content"], str):
             return messages[-1]["content"]
         else:
             raise NotImplementedError("Invalid messages format. Must be a list of messages or a string.")
