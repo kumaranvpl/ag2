@@ -164,7 +164,7 @@ class CohereClient:
                 # Process the schema
                 processed_schema = ensure_type_fields(schema, defs)
 
-                cohere_params["response_format"] = {"type": "json_object", "schema": processed_schema}
+                cohere_params["response_format"] = {"type": "json_object", "json_schema": processed_schema}
             else:
                 raise ValueError("response_format must be a Pydantic BaseModel")
 
