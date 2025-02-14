@@ -163,6 +163,8 @@ class GeminiClient:
                 "Google Cloud project and compute location cannot be set when using an API Key!"
             )
 
+        self.api_version = kwargs.get("api_version")
+
         # Store the response format, if provided (for structured outputs)
         self._response_format: Optional[Type[BaseModel]] = None
 
@@ -210,6 +212,7 @@ class GeminiClient:
             )
 
         params.get("api_type", "google")  # not used
+        http_options = {"api_version": self.api_version} if self.api_version else None
         messages = params.get("messages", [])
         stream = params.get("stream", False)
         n_response = params.get("n", 1)
@@ -268,7 +271,7 @@ class GeminiClient:
             chat = model.start_chat(history=gemini_messages[:-1], response_validation=response_validation)
             response = chat.send_message(gemini_messages[-1].parts, stream=stream, safety_settings=safety_settings)
         else:
-            client = genai.Client(api_key=self.api_key)
+            client = genai.Client(api_key=self.api_key, http_options=http_options)
             generate_content_config = GenerateContentConfig(
                 safety_settings=safety_settings,
                 system_instruction=system_instruction,
@@ -574,11 +577,30 @@ class GeminiClient:
         except Exception as e:
             raise ValueError(f"Failed to parse response as valid JSON matching the schema for Structured Output: {e!s}")
 
+    @staticmethod
+    def _convert_type_null_to_nullable(schema: Any) -> Any:
+        """
+        Recursively converts all occurrences of {"type": "null"} to {"nullable": True} in a schema.
+        """
+        if isinstance(schema, dict):
+            # If schema matches {"type": "null"}, replace it
+            if schema == {"type": "null"}:
+                return {"nullable": True}
+            # Otherwise, recursively process dictionary
+            return {key: GeminiClient._convert_type_null_to_nullable(value) for key, value in schema.items()}
+        elif isinstance(schema, list):
+            # Recursively process list elements
+            return [GeminiClient._convert_type_null_to_nullable(item) for item in schema]
+        return schema
+
     def _tools_to_gemini_tools(self, tools: list[dict[str, Any]]) -> list[Tool]:
         """Create Gemini tools (as typically requires Callables)"""
         functions = []
         for tool in tools:
             if self.use_vertexai:
+                tool["function"]["parameters"] = GeminiClient._convert_type_null_to_nullable(
+                    tool["function"]["parameters"]
+                )
                 function = vaiFunctionDeclaration(
                     name=tool["function"]["name"],
                     description=tool["function"]["description"],
@@ -659,7 +681,8 @@ class GeminiClient:
     @staticmethod
     def _create_gemini_function_parameters(function_parameter: dict[str, any]) -> dict[str, any]:
         """Convert function parameters to Gemini format, recursive"""
-        function_parameter["type"] = function_parameter["type"].upper()
+        if "type" in function_parameter:
+            function_parameter["type"] = function_parameter["type"].upper()
 
         # Parameter properties and items
         if "properties" in function_parameter:
