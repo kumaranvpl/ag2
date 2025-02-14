@@ -373,6 +373,25 @@ class CohereClient:
 
         return response_oai
 
+    def _convert_json_response(self, response: str) -> Any:
+        """Extract and validate JSON response from the output for structured outputs.
+        Args:
+            response (str): The response from the API.
+        Returns:
+            Any: The parsed JSON response.
+        """
+        if not self._response_format:
+            return response
+
+        try:
+            # Parse JSON and validate against the Pydantic model
+            json_data = json.loads(response)
+            return self._response_format.model_validate(json_data)
+        except Exception as e:
+            raise ValueError(
+                f"Failed to parse response as valid JSON matching the schema for Structured Output: {str(e)}"
+            )
+
 
 def _format_json_response(response: Any, original_answer: str) -> str:
     """Formats the JSON response for structured outputs using the format method if it exists."""
