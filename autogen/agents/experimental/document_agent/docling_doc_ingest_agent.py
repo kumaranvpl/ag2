@@ -35,6 +35,15 @@ class DoclingDocIngestAgent(ConversableAgent):
         parsed_docs_path: Union[Path, str] = "./parsed_docs",
         query_engine: Optional[DoclingMdQueryEngine] = None,
     ):
+        """
+        Initialize the DoclingDocIngestAgent.
+
+        Args:
+        name (str): The name of the DoclingDocIngestAgent.
+        llm_config (Optional[Union[dict, Literal[False]]]): The configuration for the LLM.
+        parsed_docs_path (Union[Path, str]): The path where parsed documents will be stored.
+        query_engine (Optional[DoclingMdQueryEngine]): The DoclingMdQueryEngine to use for querying documents.
+        """
         if query_engine:
             self.docling_query_engine = query_engine
         else:
@@ -43,6 +52,17 @@ class DoclingDocIngestAgent(ConversableAgent):
         parsed_docs_path = preprocess_path(str_or_path=parsed_docs_path)
 
         def data_ingest_task(context_variables: dict) -> SwarmResult:  # type: ignore[type-arg]
+            """
+            A tool for Swarm agent to ingests documents using the docling_parse_docs to parse documents to markdown
+            and add them to the docling_query_engine.
+
+            Args:
+            context_variables (dict): The context variables for the task.
+
+            Returns:
+            SwarmResult: The result of the task.
+            """
+
             tasks = context_variables.get("DocumentsToIngest", [])
             while tasks:
                 task = tasks.pop()

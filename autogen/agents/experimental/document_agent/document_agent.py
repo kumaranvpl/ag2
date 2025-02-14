@@ -19,9 +19,12 @@ from autogen.agentchat.contrib.swarm_agent import (
     register_hand_off,
 )
 from autogen.agents.experimental.document_agent.docling_query_engine import DoclingMdQueryEngine
+from autogen.doc_utils import export_module
 from autogen.oai.client import OpenAIWrapper
 
 from .docling_doc_ingest_agent import DoclingDocIngestAgent
+
+__all__ = ["DocumentAgent"]
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -86,6 +89,10 @@ class DocumentTask(BaseModel):
 
 
 class DocumentTriageAgent(ConversableAgent):
+    """
+    The DocumentTriageAgent is responsible for deciding what type of task to perform from user requests.
+    """
+
     def __init__(self, llm_config: Dict[str, Any]):
         # Add the structured message to the LLM configuration
         structured_config_list = deepcopy(llm_config)
@@ -106,7 +113,14 @@ class DocumentTriageAgent(ConversableAgent):
         )
 
 
+@export_module("autogen.agents.experimental")
 class DocumentAgent(ConversableAgent):
+    """
+    The DocumentAgent is responsible for ingest and querying documents.
+
+    Internally, it generates a group of swarm agents to solve tasks.
+    """
+
     def __init__(
         self,
         name: str = "Document_Agent",
