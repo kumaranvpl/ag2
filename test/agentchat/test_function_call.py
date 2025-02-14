@@ -1,30 +1,26 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-#!/usr/bin/env python3 -m pytest
+# !/usr/bin/env python3 -m pytest
 
+import asyncio
 import json
 import sys
 
 import pytest
 
 import autogen
+from autogen.import_utils import skip_on_missing_imports
 from autogen.math_utils import eval_math_responses
 
-from ..conftest import Credentials, reason, skip_openai  # noqa: E402
-
-try:
-    from openai import OpenAI
-except ImportError:
-    skip = True
-else:
-    skip = False or skip_openai
+from ..conftest import Credentials, reason
 
 
-@pytest.mark.skipif(skip, reason=reason)
+@pytest.mark.openai
+@skip_on_missing_imports(["openai"])
 def test_eval_math_responses(credentials_gpt_4o_mini: Credentials):
     functions = [
         {
@@ -160,14 +156,12 @@ def test_execute_function():
 
 @pytest.mark.asyncio
 async def test_a_execute_function():
-    import time
-
     from autogen.agentchat import UserProxyAgent
 
     # Create an async function
     async def add_num(num_to_be_added):
         given_num = 10
-        time.sleep(1)
+        asyncio.sleep(1)
         return str(num_to_be_added + given_num)
 
     user = UserProxyAgent(name="test", function_map={"add_num": add_num})
@@ -219,10 +213,12 @@ async def test_a_execute_function():
     assert (await user.a_execute_function(func_call))[1]["content"] == "42"
 
 
+@pytest.mark.openai
 @pytest.mark.skipif(
-    skip or not sys.version.startswith("3.10"),
+    not sys.version.startswith("3.10"),
     reason=reason,
 )
+@skip_on_missing_imports(["openai"])
 def test_update_function(credentials_gpt_4o_mini: Credentials):
     llm_config = {
         "config_list": credentials_gpt_4o_mini.config_list,
@@ -233,7 +229,7 @@ def test_update_function(credentials_gpt_4o_mini: Credentials):
     user_proxy = autogen.UserProxyAgent(
         name="user_proxy",
         human_input_mode="NEVER",
-        is_termination_msg=lambda x: True if "TERMINATE" in x.get("content") else False,
+        is_termination_msg=lambda x: "TERMINATE" in x.get("content"),
     )
     assistant = autogen.AssistantAgent(name="test", llm_config=llm_config)
 
@@ -256,7 +252,6 @@ def test_update_function(credentials_gpt_4o_mini: Credentials):
         summary_method="reflection_with_llm",
     )
     messages1 = assistant.chat_messages[user_proxy][-1]["content"]
-    print(messages1)
     print("Chat summary and cost", res1.summary, res1.cost)
 
     assistant.update_function_signature("greet_user", is_remove=True)
@@ -266,7 +261,6 @@ def test_update_function(credentials_gpt_4o_mini: Credentials):
         summary_method="reflection_with_llm",
     )
     messages2 = assistant.chat_messages[user_proxy][-1]["content"]
-    print(messages2)
     # The model should know about the function in the context of the conversation
     assert "greet_user" in messages1
     assert "greet_user" not in messages2

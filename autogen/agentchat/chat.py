@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -8,12 +8,12 @@ import asyncio
 import datetime
 import logging
 import warnings
-from collections import abc, defaultdict
+from collections import defaultdict
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any
 
-from ..formatting_utils import colored
+from ..doc_utils import export_module
 from ..io.base import IOStream
 from ..messages.agent_messages import PostCarryoverProcessingMessage
 from .utils import consolidate_chat_info
@@ -21,8 +21,11 @@ from .utils import consolidate_chat_info
 logger = logging.getLogger(__name__)
 Prerequisite = tuple[int, int]
 
+__all__ = ["ChatResult", "a_initiate_chats", "initiate_chats"]
+
 
 @dataclass
+@export_module("autogen")
 class ChatResult:
     """(Experimental) The result of a chat. Almost certain to be changed."""
 
@@ -43,9 +46,7 @@ class ChatResult:
 
 
 def _validate_recipients(chat_queue: list[dict[str, Any]]) -> None:
-    """
-    Validate recipients exits and warn repetitive recipients.
-    """
+    """Validate recipients exits and warn repetitive recipients."""
     receipts_set = set()
     for chat_info in chat_queue:
         assert "recipient" in chat_info, "recipient must be provided."
@@ -58,9 +59,7 @@ def _validate_recipients(chat_queue: list[dict[str, Any]]) -> None:
 
 
 def __create_async_prerequisites(chat_queue: list[dict[str, Any]]) -> list[Prerequisite]:
-    """
-    Create list of Prerequisite (prerequisite_chat_id, chat_id)
-    """
+    """Create list of Prerequisite (prerequisite_chat_id, chat_id)"""
     prerequisites = []
     for chat_info in chat_queue:
         if "chat_id" not in chat_info:
@@ -77,11 +76,11 @@ def __create_async_prerequisites(chat_queue: list[dict[str, Any]]) -> list[Prere
 def __find_async_chat_order(chat_ids: set[int], prerequisites: list[Prerequisite]) -> list[int]:
     """Find chat order for async execution based on the prerequisite chats
 
-    args:
+    Args:
         num_chats: number of chats
         prerequisites: List of Prerequisite (prerequisite_chat_id, chat_id)
 
-    returns:
+    Returns:
         list: a list of chat_id in order.
     """
     edges = defaultdict(set)
@@ -135,13 +134,15 @@ def __post_carryover_processing(chat_info: dict[str, Any]) -> None:
     iostream.send(PostCarryoverProcessingMessage(chat_info=chat_info))
 
 
+@export_module("autogen")
 def initiate_chats(chat_queue: list[dict[str, Any]]) -> list[ChatResult]:
     """Initiate a list of chats.
+
     Args:
         chat_queue (List[Dict]): A list of dictionaries containing the information about the chats.
 
         Each dictionary should contain the input arguments for
-        [`ConversableAgent.initiate_chat`](/docs/reference/agentchat/conversable_agent#initiate-chat).
+        [`ConversableAgent.initiate_chat`](/docs/api-reference/autogen/ConversableAgent#initiate-chat).
         For example:
             - `"sender"` - the sender agent.
             - `"recipient"` - the recipient agent.
@@ -166,10 +167,10 @@ def initiate_chats(chat_queue: list[dict[str, Any]]) -> list[ChatResult]:
             - `"finished_chat_indexes_to_exclude_from_carryover"` - It can be used by specifying a list of indexes of the finished_chats list,
                from which to exclude the summaries for carryover. If 'finished_chat_indexes_to_exclude_from_carryover' is not provided or an empty list,
                then summary from all the finished chats will be taken.
+
     Returns:
         (list): a list of ChatResult objects corresponding to the finished chats in the chat_queue.
     """
-
     consolidate_chat_info(chat_queue)
     _validate_recipients(chat_queue)
     current_chat_queue = chat_queue.copy()
@@ -202,9 +203,7 @@ def __system_now_str():
 
 
 def _on_chat_future_done(chat_future: asyncio.Future, chat_id: int):
-    """
-    Update ChatResult when async Task for Chat is completed.
-    """
+    """Update ChatResult when async Task for Chat is completed."""
     logger.debug(f"Update chat {chat_id} result on task completion." + __system_now_str())
     chat_result = chat_future.result()
     chat_result.chat_id = chat_id
@@ -213,9 +212,7 @@ def _on_chat_future_done(chat_future: asyncio.Future, chat_id: int):
 async def _dependent_chat_future(
     chat_id: int, chat_info: dict[str, Any], prerequisite_chat_futures: dict[int, asyncio.Future]
 ) -> asyncio.Task:
-    """
-    Create an async Task for each chat.
-    """
+    """Create an async Task for each chat."""
     logger.debug(f"Create Task for chat {chat_id}." + __system_now_str())
     _chat_carryover = chat_info.get("carryover", [])
     finished_chat_indexes_to_exclude_from_carryover = chat_info.get(
@@ -252,11 +249,11 @@ async def _dependent_chat_future(
 async def a_initiate_chats(chat_queue: list[dict[str, Any]]) -> dict[int, ChatResult]:
     """(async) Initiate a list of chats.
 
-    args:
+    Args:
         - Please refer to `initiate_chats`.
 
 
-    returns:
+    Returns:
         - (Dict): a dict of ChatId: ChatResult corresponding to the finished chats in the chat_queue.
     """
     consolidate_chat_info(chat_queue)

@@ -1,37 +1,27 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-#!/usr/bin/env python3 -m pytest
+# !/usr/bin/env python3 -m pytest
 
-import os
 import sys
 
 import pytest
 
-import autogen
 from autogen.agentchat.contrib.math_user_proxy_agent import (
     MathUserProxyAgent,
     _add_print_to_last_line,
     _remove_print,
 )
+from autogen.import_utils import skip_on_missing_imports
 
-from ..conftest import Credentials, skip_openai  # noqa: E402
-
-try:
-    from openai import OpenAI
-except ImportError:
-    skip = True
-else:
-    skip = False or skip_openai
+from ..conftest import Credentials
 
 
-@pytest.mark.skipif(
-    skip or sys.platform in ["darwin", "win32"],
-    reason="do not run on MacOS or windows",
-)
+@pytest.mark.openai
+@skip_on_missing_imports(["openai"])
 def test_math_user_proxy_agent(
     credentials_gpt_4o_mini: Credentials,
 ):

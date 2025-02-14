@@ -1,10 +1,10 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-#!/usr/bin/env python3 -m pytest
+# !/usr/bin/env python3 -m pytest
 
 import asyncio
 
@@ -12,10 +12,10 @@ import pytest
 
 from autogen import AssistantAgent, UserProxyAgent
 
-from ..conftest import Credentials, skip_openai  # noqa: E402
+from ..conftest import Credentials
 
 
-@pytest.mark.skipif(skip_openai, reason="requested to skip openai tests")
+@pytest.mark.openai
 @pytest.mark.asyncio
 async def test_async_chats(credentials_gpt_4o_mini: Credentials):
     config_list_4omini = credentials_gpt_4o_mini.config_list
@@ -63,45 +63,43 @@ async def test_async_chats(credentials_gpt_4o_mini: Credentials):
     def my_summary_method(recipient, sender, summary_args):
         return recipient.chat_messages[sender][1].get("content", "")
 
-    chat_res = await user.a_initiate_chats(
-        [
-            {
-                "chat_id": 1,
-                "recipient": financial_assistant_1,
-                "message": financial_tasks[0],
-                "silent": False,
-                "summary_method": my_summary_method,
-                "max_turns": 1,
-            },
-            {
-                "chat_id": 2,
-                "prerequisites": [1],
-                "recipient": financial_assistant_2,
-                "message": financial_tasks[1],
-                "silent": True,
-                "summary_method": "reflection_with_llm",
-                "max_turns": 3,
-            },
-            {
-                "chat_id": 3,
-                "prerequisites": [1, 2],
-                "recipient": financial_assistant_1,
-                "message": financial_tasks[2],
-                "summary_method": "last_msg",
-                "clear_history": False,
-                "max_turns": 1,
-            },
-            {
-                "chat_id": 4,
-                "prerequisites": [1, 2, 3],
-                "recipient": writer,
-                "message": writing_tasks[0],
-                "carryover": "I want to include a figure or a table of data in the blogpost.",
-                "summary_method": "last_msg",
-                "max_turns": 2,
-            },
-        ]
-    )
+    chat_res = await user.a_initiate_chats([
+        {
+            "chat_id": 1,
+            "recipient": financial_assistant_1,
+            "message": financial_tasks[0],
+            "silent": False,
+            "summary_method": my_summary_method,
+            "max_turns": 1,
+        },
+        {
+            "chat_id": 2,
+            "prerequisites": [1],
+            "recipient": financial_assistant_2,
+            "message": financial_tasks[1],
+            "silent": True,
+            "summary_method": "reflection_with_llm",
+            "max_turns": 3,
+        },
+        {
+            "chat_id": 3,
+            "prerequisites": [1, 2],
+            "recipient": financial_assistant_1,
+            "message": financial_tasks[2],
+            "summary_method": "last_msg",
+            "clear_history": False,
+            "max_turns": 1,
+        },
+        {
+            "chat_id": 4,
+            "prerequisites": [1, 2, 3],
+            "recipient": writer,
+            "message": writing_tasks[0],
+            "carryover": "I want to include a figure or a table of data in the blogpost.",
+            "summary_method": "last_msg",
+            "max_turns": 2,
+        },
+    ])
     last_chat_id = 4
 
     chat_w_writer = chat_res[last_chat_id]

@@ -1,47 +1,36 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-#!/usr/bin/env python3 -m pytest
+# !/usr/bin/env python3 -m pytest
 
 import os
 import sys
-from typing import Generator
 
 import pytest
 
-from autogen import AssistantAgent, config_list_from_json
+from autogen import AssistantAgent
+from autogen.agentchat.contrib.qdrant_retrieve_user_proxy_agent import (
+    QdrantRetrieveUserProxyAgent,
+    create_qdrant_from_dir,
+    query_qdrant,
+)
+from autogen.import_utils import optional_import_block, skip_on_missing_imports
 
-from ....conftest import Credentials, reason, skip_openai  # noqa: E402
+from ....conftest import Credentials
 
-try:
-    import fastembed
+with optional_import_block() as result:
     from qdrant_client import QdrantClient
 
-    from autogen.agentchat.contrib.qdrant_retrieve_user_proxy_agent import (
-        QdrantRetrieveUserProxyAgent,
-        create_qdrant_from_dir,
-        query_qdrant,
-    )
 
-    QDRANT_INSTALLED = True
-except ImportError:
-    QDRANT_INSTALLED = False
-
-try:
-    import openai
-except ImportError:
-    skip = True
-else:
-    skip = False or skip_openai
-
-
+@pytest.mark.openai
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"] or not QDRANT_INSTALLED or skip,
+    sys.platform in ["darwin", "win32"],
     reason="do not run on MacOS or windows OR dependency is not installed OR requested to skip",
 )
+@skip_on_missing_imports(["qdrant_client", "fastembed", "openai"], "retrievechat-qdrant")
 def test_retrievechat(credentials_gpt_4o_mini: Credentials):
     conversations = {}
     # ChatCompletion.start_logging(conversations)  # deprecated in v0.2
@@ -75,7 +64,8 @@ def test_retrievechat(credentials_gpt_4o_mini: Credentials):
     print(conversations)
 
 
-@pytest.mark.skipif(not QDRANT_INSTALLED, reason="qdrant_client is not installed")
+@pytest.mark.openai
+@skip_on_missing_imports(["qdrant_client", "fastembed"], "retrievechat-qdrant")
 def test_qdrant_filter():
     client = QdrantClient(":memory:")
     create_qdrant_from_dir(dir_path="./website/docs", client=client, collection_name="autogen-docs")
@@ -90,7 +80,8 @@ def test_qdrant_filter():
     assert len(results["ids"][0]) == 4
 
 
-@pytest.mark.skipif(not QDRANT_INSTALLED, reason="qdrant_client is not installed")
+@pytest.mark.openai
+@skip_on_missing_imports(["qdrant_client", "fastembed"], "retrievechat-qdrant")
 def test_qdrant_search():
     test_dir = os.path.join(os.path.dirname(__file__), "../../..", "test_files")
     client = QdrantClient(":memory:")

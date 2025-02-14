@@ -1,30 +1,31 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 
 import inspect
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
+from ..doc_utils import export_module
 from ..tools.function_utils import get_function_schema
-from .dependency_injection import inject_params
+from .dependency_injection import ChatContext, get_context_params, inject_params
 
 if TYPE_CHECKING:
     from ..agentchat.conversable_agent import ConversableAgent
 
-__all__ = ["Tool"]
+__all__ = ["Tool", "tool"]
 
 
+@export_module("autogen.tools")
 class Tool:
-    """
-    A class representing a Tool that can be used by an agent for various tasks.
+    """A class representing a Tool that can be used by an agent for various tasks.
 
     This class encapsulates a tool with a name, description, and an executable function.
     The tool can be registered with a ConversableAgent for use either with an LLM or for direct execution.
 
     Attributes:
         name (str): The name of the tool.
-        description (str): A brief description of the tool's purpose or function.
-        func (Callable[..., Any]): The function to be executed when the tool is called.
+        description (str): The description of the tool.
+        func_or_tool (Union[Tool, Callable[..., Any]]): The function or Tool instance to create a Tool from.
     """
 
     def __init__(
@@ -45,13 +46,15 @@ class Tool:
             self._name: str = name or func_or_tool.name
             self._description: str = description or func_or_tool.description
             self._func: Callable[..., Any] = func_or_tool.func
-        elif inspect.isfunction(func_or_tool):
+            self._chat_context_param_names: list[str] = func_or_tool._chat_context_param_names
+        elif inspect.isfunction(func_or_tool) or inspect.ismethod(func_or_tool):
+            self._chat_context_param_names = get_context_params(func_or_tool, subclass=ChatContext)
             self._func = inject_params(func_or_tool)
             self._name = name or func_or_tool.__name__
             self._description = description or func_or_tool.__doc__ or ""
         else:
             raise ValueError(
-                f"Parameter 'func_or_tool' must be a function or a Tool instance, it is '{type(func_or_tool)}' instead."
+                f"Parameter 'func_or_tool' must be a function, method or a Tool instance, it is '{type(func_or_tool)}' instead."
             )
 
     @property
@@ -67,8 +70,7 @@ class Tool:
         return self._func
 
     def register_for_llm(self, agent: "ConversableAgent") -> None:
-        """
-        Registers the tool for use with a ConversableAgent's language model (LLM).
+        """Registers the tool for use with a ConversableAgent's language model (LLM).
 
         This method registers the tool so that it can be invoked by the agent during
         interactions with the language model.
@@ -79,8 +81,7 @@ class Tool:
         agent.register_for_llm()(self)
 
     def register_for_execution(self, agent: "ConversableAgent") -> None:
-        """
-        Registers the tool for direct execution by a ConversableAgent.
+        """Registers the tool for direct execution by a ConversableAgent.
 
         This method registers the tool so that it can be executed by the agent,
         typically outside of the context of an LLM interaction.
@@ -90,9 +91,22 @@ class Tool:
         """
         agent.register_for_execution()(self)
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+    def register_tool(self, agent: "ConversableAgent") -> None:
+        """Register a tool to be both proposed and executed by an agent.
+
+        Equivalent to calling both `register_for_llm` and `register_for_execution` with the same agent.
+
+        Note: This will not make the agent recommend and execute the call in the one step. If the agent
+        recommends the tool, it will need to be the next agent to speak in order to execute the tool.
+
+        Args:
+            agent (ConversableAgent): The agent to which the tool will be registered.
         """
-        Execute the tool by calling its underlying function with the provided arguments.
+        self.register_for_llm(agent)
+        self.register_for_execution(agent)
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """Execute the tool by calling its underlying function with the provided arguments.
 
         Args:
             *args: Positional arguments to pass to the tool
@@ -134,3 +148,21 @@ class Tool:
         schema = {"type": schema["type"], **schema["function"]}
 
         return schema
+
+
+@export_module("autogen.tools")
+def tool(name: Optional[str] = None, description: Optional[str] = None) -> Callable[[Callable[..., Any]], Tool]:
+    """Decorator to create a Tool from a function.
+
+    Args:
+        name (str): The name of the tool.
+        description (str): The description of the tool.
+
+    Returns:
+        Callable[[Callable[..., Any]], Tool]: A decorator that creates a Tool from a function.
+    """
+
+    def decorator(func: Callable[..., Any]) -> Tool:
+        return Tool(name=name, description=description, func_or_tool=func)
+
+    return decorator

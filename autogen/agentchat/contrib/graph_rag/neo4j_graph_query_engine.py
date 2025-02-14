@@ -1,30 +1,38 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 import os
-from typing import Dict, List, Optional, TypeAlias, Union
+import sys
+from typing import Optional, Union
 
-from llama_index.core import PropertyGraphIndex, SimpleDirectoryReader
-from llama_index.core.base.embeddings.base import BaseEmbedding
-from llama_index.core.indices.property_graph import (
-    DynamicLLMPathExtractor,
-    SchemaLLMPathExtractor,
-)
-from llama_index.core.indices.property_graph.transformations.schema_llm import Triple
-from llama_index.core.llms import LLM
-from llama_index.core.readers.json import JSONReader
-from llama_index.core.schema import Document as LlamaDocument
-from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.graph_stores.neo4j import Neo4jPropertyGraphStore
-from llama_index.llms.openai import OpenAI
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
+else:
+    from typing_extensions import TypeAlias
 
+from ....import_utils import optional_import_block, require_optional_import
 from .document import Document, DocumentType
 from .graph_query_engine import GraphQueryEngine, GraphStoreQueryResult
 
+with optional_import_block():
+    from llama_index.core import PropertyGraphIndex, SimpleDirectoryReader
+    from llama_index.core.base.embeddings.base import BaseEmbedding
+    from llama_index.core.indices.property_graph import (
+        DynamicLLMPathExtractor,
+        SchemaLLMPathExtractor,
+    )
+    from llama_index.core.indices.property_graph.transformations.schema_llm import Triple
+    from llama_index.core.llms import LLM
+    from llama_index.core.readers.json import JSONReader
+    from llama_index.core.schema import Document as LlamaDocument
+    from llama_index.embeddings.openai import OpenAIEmbedding
+    from llama_index.graph_stores.neo4j import Neo4jPropertyGraphStore
+    from llama_index.llms.openai import OpenAI
 
+
+@require_optional_import("llama_index", "neo4j")
 class Neo4jGraphQueryEngine(GraphQueryEngine):
-    """
-    This class serves as a wrapper for a property graph query engine backed by LlamaIndex and Neo4j,
+    """This class serves as a wrapper for a property graph query engine backed by LlamaIndex and Neo4j,
     facilitating the creating, connecting, updating, and querying of LlamaIndex property graphs.
 
     It builds a property graph Index from input documents,
@@ -50,15 +58,14 @@ class Neo4jGraphQueryEngine(GraphQueryEngine):
         database: str = "neo4j",
         username: str = "neo4j",
         password: str = "neo4j",
-        llm: LLM = OpenAI(model="gpt-4o", temperature=0.0),
-        embedding: BaseEmbedding = OpenAIEmbedding(model_name="text-embedding-3-small"),
-        entities: Optional[TypeAlias] = None,
-        relations: Optional[TypeAlias] = None,
-        schema: Optional[Union[dict[str, str], list[Triple]]] = None,
+        llm: Optional["LLM"] = None,
+        embedding: Optional["BaseEmbedding"] = None,
+        entities: Optional["TypeAlias"] = None,
+        relations: Optional["TypeAlias"] = None,
+        schema: Optional[Union[dict[str, str], list["Triple"]]] = None,
         strict: Optional[bool] = False,
     ):
-        """
-        Initialize a Neo4j Property graph.
+        """Initialize a Neo4j Property graph.
         Please also refer to https://docs.llamaindex.ai/en/stable/examples/property_graph/graph_store/
 
         Args:
@@ -80,19 +87,16 @@ class Neo4jGraphQueryEngine(GraphQueryEngine):
         self.database = database
         self.username = username
         self.password = password
-        self.llm = llm
-        self.embedding = embedding
+        self.llm = llm or OpenAI(model="gpt-4o", temperature=0.0)
+        self.embedding = embedding or OpenAIEmbedding(model_name="text-embedding-3-small")
         self.entities = entities
         self.relations = relations
         self.schema = schema
         self.strict = strict
 
-    def init_db(self, input_doc: list[Document] | None = None):
-        """
-        Build the knowledge graph with input documents.
-        """
-
-        self.documents = self._load_doc(input_doc)
+    def init_db(self, input_doc: Optional[list[Document]] = None):
+        """Build the knowledge graph with input documents."""
+        self.documents = self._load_doc(input_doc if input_doc is not None else [])
 
         self.graph_store = Neo4jPropertyGraphStore(
             username=self.username,
@@ -117,9 +121,7 @@ class Neo4jGraphQueryEngine(GraphQueryEngine):
         )
 
     def connect_db(self):
-        """
-        Connect to an existing knowledge graph database.
-        """
+        """Connect to an existing knowledge graph database."""
         self.graph_store = Neo4jPropertyGraphStore(
             username=self.username,
             password=self.password,
@@ -138,8 +140,7 @@ class Neo4jGraphQueryEngine(GraphQueryEngine):
         )
 
     def add_records(self, new_records: list) -> bool:
-        """
-        Add new records to the knowledge graph. Must be local files.
+        """Add new records to the knowledge graph. Must be local files.
 
         Args:
             new_records (List[Document]): List of new documents to add.
@@ -152,9 +153,8 @@ class Neo4jGraphQueryEngine(GraphQueryEngine):
 
         try:
             """
-            SimpleDirectoryReader will select the best file reader based on the file extensions, including:
-            [DocxReader, EpubReader, HWPReader, ImageReader, IPYNBReader, MarkdownReader, MboxReader,
-            PandasCSVReader, PandasExcelReader,PDFReader,PptxReader, VideoAudioReader]
+            SimpleDirectoryReader will select the best file reader based on the file extensions,
+            see  _load_doc for supported file types.
             """
             new_documents = SimpleDirectoryReader(input_files=[doc.path_or_url for doc in new_records]).load_data()
 
@@ -167,8 +167,7 @@ class Neo4jGraphQueryEngine(GraphQueryEngine):
             return False
 
     def query(self, question: str, n_results: int = 1, **kwargs) -> GraphStoreQueryResult:
-        """
-        Query the property graph with a question using LlamaIndex chat engine.
+        """Query the property graph with a question using LlamaIndex chat engine.
         We use the condense_plus_context chat mode
         which condenses the conversation history and the user query into a standalone question,
         and then build a context for the standadlone question
@@ -192,29 +191,27 @@ class Neo4jGraphQueryEngine(GraphQueryEngine):
         return GraphStoreQueryResult(answer=str(response))
 
     def _clear(self) -> None:
-        """
-        Delete all entities and relationships in the graph.
+        """Delete all entities and relationships in the graph.
         TODO: Delete all the data in the database including indexes and constraints.
         """
         with self.graph_store._driver.session() as session:
             session.run("MATCH (n) DETACH DELETE n;")
 
-    def _load_doc(self, input_doc: list[Document]) -> list[LlamaDocument]:
-        """
-        Load documents from the input files. Currently support the following file types:
-            .csv - comma-separated values
-            .docx - Microsoft Word
-            .epub - EPUB ebook format
-            .hwp - Hangul Word Processor
-            .ipynb - Jupyter Notebook
-            .jpeg, .jpg - JPEG image
-            .mbox - MBOX email archive
-            .md - Markdown
-            .mp3, .mp4 - audio and video
-            .pdf - Portable Document Format
-            .png - Portable Network Graphics
-            .ppt, .pptm, .pptx - Microsoft PowerPoint
-            .json JSON files
+    def _load_doc(self, input_doc: list[Document]) -> list["LlamaDocument"]:
+        """Load documents from the input files. Currently support the following file types:
+        .csv - comma-separated values
+        .docx - Microsoft Word
+        .epub - EPUB ebook format
+        .hwp - Hangul Word Processor
+        .ipynb - Jupyter Notebook
+        .jpeg, .jpg - JPEG image
+        .mbox - MBOX email archive
+        .md - Markdown
+        .mp3, .mp4 - audio and video
+        .pdf - Portable Document Format
+        .png - Portable Network Graphics
+        .ppt, .pptm, .pptx - Microsoft PowerPoint
+        .json JSON files
         """
         for doc in input_doc:
             if not os.path.exists(doc.path_or_url):
@@ -236,8 +233,7 @@ class Neo4jGraphQueryEngine(GraphQueryEngine):
         return loaded_documents
 
     def _create_kg_extractors(self):
-        """
-        If strict is True,
+        """If strict is True,
         extract paths following a strict schema of allowed relationships for each entity.
 
         If strict is False,
@@ -245,7 +241,6 @@ class Neo4jGraphQueryEngine(GraphQueryEngine):
 
         # To add more extractors, please refer to https://docs.llamaindex.ai/en/latest/module_guides/indexing/lpg_index_guide/#construction
         """
-
         #
         kg_extractors = [
             SchemaLLMPathExtractor(

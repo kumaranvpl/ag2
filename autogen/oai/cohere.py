@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2025, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -36,14 +36,18 @@ import time
 import warnings
 from typing import Any, Optional, Type
 
-from cohere import ClientV2 as CohereV2
-from cohere.types import ToolResult
 from openai.types.chat import ChatCompletion, ChatCompletionMessageToolCall
 from openai.types.chat.chat_completion import ChatCompletionMessage, Choice
 from openai.types.completion_usage import CompletionUsage
 from pydantic import BaseModel
 
 from autogen.oai.client_utils import FormatterProtocol, logging_formatter, validate_parameter
+
+from ..import_utils import optional_import_block, require_optional_import
+
+with optional_import_block():
+    from cohere import ClientV2 as CohereV2
+    from cohere.types import ToolResult
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:
@@ -73,20 +77,19 @@ class CohereClient:
             api_key (str): The API key for using Cohere (or environment variable COHERE_API_KEY needs to be set)
         """
         # Ensure we have the api_key upon instantiation
-        self.api_key = kwargs.get("api_key", None)
+        self.api_key = kwargs.get("api_key")
         if not self.api_key:
             self.api_key = os.getenv("COHERE_API_KEY")
 
-        assert (
-            self.api_key
-        ), "Please include the api_key in your config list entry for Cohere or set the COHERE_API_KEY env variable."
+        assert self.api_key, (
+            "Please include the api_key in your config list entry for Cohere or set the COHERE_API_KEY env variable."
+        )
 
         # Store the response format, if provided (for structured outputs)
         self._response_format: Optional[Type[BaseModel]] = None
 
     def message_retrieval(self, response) -> list:
-        """
-        Retrieve and return a list of strings or a list of Choice.Message from the response.
+        """Retrieve and return a list of strings or a list of Choice.Message from the response.
 
         NOTE: if a list of Choice.Message is returned, it currently needs to contain the fields of OpenAI's ChatCompletion Message object,
         since that is expected for function or tool calling in the rest of the codebase at the moment, unless a custom agent is being used.
@@ -114,10 +117,10 @@ class CohereClient:
 
         # Check that we have what we need to use Cohere's API
         # We won't enforce the available models as they are likely to change
-        cohere_params["model"] = params.get("model", None)
-        assert cohere_params[
-            "model"
-        ], "Please specify the 'model' in your config list entry to nominate the Cohere model to use."
+        cohere_params["model"] = params.get("model")
+        assert cohere_params["model"], (
+            "Please specify the 'model' in your config list entry to nominate the Cohere model to use."
+        )
 
         # Handle structured output response format from Pydantic model
         if "response_format" in params and params["response_format"] is not None:
@@ -200,6 +203,7 @@ class CohereClient:
 
         return cohere_params
 
+    @require_optional_import("cohere", "cohere")
     def create(self, params: dict) -> ChatCompletion:
         messages = params.get("messages", [])
         client_name = params.get("client_name") or "AG2"
@@ -210,40 +214,45 @@ class CohereClient:
         cohere_params = self.parse_params(params)
 
         cohere_params["messages"] = messages
-        
+
         if "tools" in params:
             cohere_tool_names = set([tool["function"]["name"] for tool in params["tools"]])
             cohere_params["tools"] = params["tools"]
-            
+
         # Strip out name
         for message in cohere_params["messages"]:
             message_name = message.pop("name", "")
             # Extract and prepend name to content or tool_plan if available
-            message["content"] = f"{message_name}: {(message.get("content") or message.get("tool_plan"))}" if message_name else (message.get("content") or message.get("tool_plan"))
-            
+            message["content"] = (
+                f"{message_name}: {(message.get('content') or message.get('tool_plan'))}"
+                if message_name
+                else (message.get("content") or message.get("tool_plan"))
+            )
+
             # Handle tool calls
             if message.get("tool_calls") is not None and len(message["tool_calls"]) > 0:
-                
                 message["tool_plan"] = message.get("tool_plan", message["content"])
-                del message["content"] # Remove content as tool_plan is prioritized
-                
+                del message["content"]  # Remove content as tool_plan is prioritized
+
                 # If tool call name is missing or not recognized, modify role and content
                 for tool_call in message["tool_calls"] or []:
                     if (not tool_call.get("function", {}).get("name")) or tool_call.get("function", {}).get(
                         "name"
                     ) not in cohere_tool_names:
                         message["role"] = "assistant"
-                        message["content"] = f"{message.pop("tool_plan",'')}{str(message['tool_calls'])}"
-                        tool_calls_modified_ids = tool_calls_modified_ids.union(set([tool_call.get("id") for tool_call in message["tool_calls"]]))
+                        message["content"] = f"{message.pop('tool_plan', '')}{str(message['tool_calls'])}"
+                        tool_calls_modified_ids = tool_calls_modified_ids.union(
+                            set([tool_call.get("id") for tool_call in message["tool_calls"]])
+                        )
                         del message["tool_calls"]
                         break
-            
+
             # Adjust role if message comes from a tool with a modified ID
             if message.get("role") == "tool":
                 tool_id = message.get("tool_call_id")
                 if tool_id in tool_calls_modified_ids:
                     message["role"] = "user"
-                    del message["tool_call_id"] # Remove the tool call ID
+                    del message["tool_call_id"]  # Remove the tool call ID
 
         # We use chat model by default
         client = CohereV2(api_key=self.api_key, client_name=client_name)
@@ -254,7 +263,7 @@ class CohereClient:
         total_tokens = 0
 
         # Stream if in parameters
-        streaming = True if "stream" in params and params["stream"] else False
+        streaming = params.get("stream")
         cohere_finish = "stop"
         tool_calls = None
         ans = None
@@ -306,7 +315,6 @@ class CohereClient:
                 cohere_finish = "tool_calls"
                 tool_calls = []
                 for tool_call in response.message.tool_calls:
-
                     # if parameters are null, clear them out (Cohere can return a string "null" if no parameter values)
 
                     tool_calls.append(
@@ -365,27 +373,6 @@ class CohereClient:
 
         return response_oai
 
-    def _convert_json_response(self, response: str) -> Any:
-        """Extract and validate JSON response from the output for structured outputs.
-
-        Args:
-            response (str): The response from the API.
-
-        Returns:
-            Any: The parsed JSON response.
-        """
-        if not self._response_format:
-            return response
-
-        try:
-            # Parse JSON and validate against the Pydantic model
-            json_data = json.loads(response)
-            return self._response_format.model_validate(json_data)
-        except Exception as e:
-            raise ValueError(
-                f"Failed to parse response as valid JSON matching the schema for Structured Output: {str(e)}"
-            )
-
 
 def _format_json_response(response: Any, original_answer: str) -> str:
     """Formats the JSON response for structured outputs using the format method if it exists."""
@@ -399,11 +386,10 @@ def extract_to_cohere_tool_results(tool_call_id: str, content_output: str, all_t
 
     for tool_call in all_tool_calls:
         if tool_call["id"] == tool_call_id:
-
             call = {
                 "name": tool_call["function"]["name"],
                 "parameters": json.loads(
-                    tool_call["function"]["arguments"] if not tool_call["function"]["arguments"] == "" else "{}"
+                    tool_call["function"]["arguments"] if tool_call["function"]["arguments"] != "" else "{}"
                 ),
             }
             output = [{"value": content_output}]

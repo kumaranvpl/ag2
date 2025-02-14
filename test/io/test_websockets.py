@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -7,27 +7,24 @@
 import json
 from pprint import pprint
 from tempfile import TemporaryDirectory
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Optional
 from unittest.mock import MagicMock
 from uuid import UUID
 
 import pytest
-from websockets.exceptions import ConnectionClosed
 
 import autogen
 from autogen.cache.cache import Cache
+from autogen.import_utils import optional_import_block, skip_on_missing_imports
 from autogen.io import IOWebsockets
 from autogen.messages.base_message import BaseMessage, wrap_message
 
-from ..conftest import Credentials, skip_openai
+from ..conftest import Credentials
 
 # Check if the websockets module is available
-try:
+with optional_import_block() as result:
+    from websockets.exceptions import ConnectionClosed
     from websockets.sync.client import connect as ws_connect
-except ImportError:  # pragma: no cover
-    skip_test = True
-else:
-    skip_test = False
 
 
 @wrap_message
@@ -43,7 +40,7 @@ class TestTextMessage(BaseMessage):
         f(self.text)
 
 
-@pytest.mark.skipif(skip_test, reason="websockets module is not available")
+@skip_on_missing_imports(["websockets"], "websockets")
 class TestConsoleIOWithWebsockets:
     def test_input_print(self) -> None:
         print()
@@ -108,7 +105,7 @@ class TestConsoleIOWithWebsockets:
 
         print("Test passed.", flush=True)
 
-    @pytest.mark.skipif(skip_openai, reason="requested to skip")
+    @pytest.mark.openai
     def test_chat(self, credentials_gpt_4o_mini: Credentials) -> None:
         print("Testing setup", flush=True)
 
@@ -143,14 +140,14 @@ class TestConsoleIOWithWebsockets:
             )
 
             # we will use a temporary directory as the cache path root to ensure fresh completion each time
-            with TemporaryDirectory() as cache_path_root:
+            with TemporaryDirectory() as cache_path_root:  # noqa: SIM117
                 with Cache.disk(cache_path_root=cache_path_root) as cache:
                     print(
                         f" - on_connect(): Initiating chat with agent {agent} using message '{initial_msg}'",
                         flush=True,
                     )
                     try:
-                        user_proxy.initiate_chat(  # noqa: F704
+                        user_proxy.initiate_chat(
                             agent,
                             message=initial_msg,
                             cache=cache,

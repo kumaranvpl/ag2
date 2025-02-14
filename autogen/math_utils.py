@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: MIT
 from typing import Optional
 
-from autogen import DEFAULT_MODEL, oai
+from . import DEFAULT_MODEL, oai
 
 _MATH_PROMPT = "{problem} Solve the problem carefully. Simplify your answer as much as possible. Put the final answer in \\boxed{{}}."
 _MATH_CONFIG = {
@@ -34,6 +34,7 @@ def solve_problem(problem: str, **config) -> str:
 def remove_boxed(string: str) -> Optional[str]:
     """Source: https://github.com/hendrycks/math
     Extract the text within a \\boxed`{...}` environment.
+
     Example:
     ```python
     > remove_boxed("\\boxed{\\frac{2}{3}}")
@@ -74,10 +75,7 @@ def last_boxed_only_string(string: str) -> Optional[str]:
                 break
         i += 1
 
-    if right_brace_idx is None:
-        retval = None
-    else:
-        retval = string[idx : right_brace_idx + 1]
+    retval = None if right_brace_idx is None else string[idx : right_brace_idx + 1]
 
     return retval
 
@@ -85,6 +83,7 @@ def last_boxed_only_string(string: str) -> Optional[str]:
 def _fix_fracs(string: str) -> str:
     """Source: https://github.com/hendrycks/math
     Reformat fractions.
+
     Examples:
     ```
     >>> _fix_fracs("\\frac1b")
@@ -130,6 +129,7 @@ def _fix_fracs(string: str) -> str:
 def _fix_a_slash_b(string: str) -> str:
     """Source: https://github.com/hendrycks/math
     Reformat fractions formatted as a/b to \\`frac{a}{b}`.
+
     Example:
     ```
     >>> _fix_a_slash_b("2/3")
@@ -168,6 +168,7 @@ def _remove_right_units(string: str) -> str:
 def _fix_sqrt(string: str) -> str:
     """Source: https://github.com/hendrycks/math
     Reformat square roots.
+
     Example:
     ```
     >>> _fix_sqrt("\\sqrt3")
@@ -238,9 +239,8 @@ def _strip_string(string: str) -> str:
         string = "0" + string
 
     # to consider: get rid of e.g. "k = " or "q = " at beginning
-    if len(string.split("=")) == 2:
-        if len(string.split("=")[0]) <= 2:
-            string = string.split("=")[1]
+    if len(string.split("=")) == 2 and len(string.split("=")[0]) <= 2:
+        string = string.split("=")[1]
 
     # fix sqrt3 --> sqrt{3}
     string = _fix_sqrt(string)

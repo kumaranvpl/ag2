@@ -1,10 +1,10 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-#!/usr/bin/env python3 -m pytest
+# !/usr/bin/env python3 -m pytest
 
 import json
 
@@ -14,7 +14,7 @@ from autogen.agentchat.contrib.agent_eval.agent_eval import generate_criteria, q
 from autogen.agentchat.contrib.agent_eval.criterion import Criterion
 from autogen.agentchat.contrib.agent_eval.task import Task
 
-from ....conftest import Credentials, reason, skip_openai  # noqa: E402
+from ....conftest import Credentials
 
 
 def remove_ground_truth(test_case: str):
@@ -28,25 +28,20 @@ def remove_ground_truth(test_case: str):
 
 @pytest.fixture
 def task() -> Task:
-    success_str = open("test/test_files/agenteval-in-out/samples/sample_math_response_successful.txt").read()
+    success_str = open("test/test_files/agenteval-in-out/samples/sample_math_response_successful.txt").read()  # noqa: SIM115
     response_successful = remove_ground_truth(success_str)[0]
-    failed_str = open("test/test_files/agenteval-in-out/samples/sample_math_response_failed.txt").read()
+    failed_str = open("test/test_files/agenteval-in-out/samples/sample_math_response_failed.txt").read()  # noqa: SIM115
     response_failed = remove_ground_truth(failed_str)[0]
-    task = Task(
-        **{
-            "name": "Math problem solving",
-            "description": "Given any question, the system needs to solve the problem as consisely and accurately as possible",
-            "successful_response": response_successful,
-            "failed_response": response_failed,
-        }
-    )
+    task = Task(**{
+        "name": "Math problem solving",
+        "description": "Given any question, the system needs to solve the problem as consisely and accurately as possible",
+        "successful_response": response_successful,
+        "failed_response": response_failed,
+    })
     return task
 
 
-@pytest.mark.skipif(
-    skip_openai,
-    reason=reason,
-)
+@pytest.mark.openai
 def test_generate_criteria(credentials_azure: Credentials, task: Task):
     criteria = generate_criteria(task=task, llm_config={"config_list": credentials_azure.config_list})
     assert criteria
@@ -56,16 +51,13 @@ def test_generate_criteria(credentials_azure: Credentials, task: Task):
     assert criteria[0].accepted_values
 
 
-@pytest.mark.skipif(
-    skip_openai,
-    reason=reason,
-)
+@pytest.mark.openai
 def test_quantify_criteria(credentials_azure: Credentials, task: Task):
     criteria_file = "test/test_files/agenteval-in-out/samples/sample_math_criteria.json"
-    criteria = open(criteria_file).read()
+    criteria = open(criteria_file).read()  # noqa: SIM115
     criteria = Criterion.parse_json_str(criteria)
 
-    test_case = open("test/test_files/agenteval-in-out/samples/sample_test_case.json").read()
+    test_case = open("test/test_files/agenteval-in-out/samples/sample_test_case.json").read()  # noqa: SIM115
     test_case, ground_truth = remove_ground_truth(test_case)
 
     quantified = quantify_criteria(

@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -6,21 +6,21 @@
 # SPDX-License-Identifier: MIT
 import os
 import pickle
-from typing import Dict, Optional, Union
-
-import chromadb
-from chromadb.config import Settings
-
-from autogen.agentchat.assistant_agent import ConversableAgent
-from autogen.agentchat.contrib.capabilities.agent_capability import AgentCapability
-from autogen.agentchat.contrib.text_analyzer_agent import TextAnalyzerAgent
+from typing import Optional, Union
 
 from ....formatting_utils import colored
+from ....import_utils import optional_import_block, require_optional_import
+from ...assistant_agent import ConversableAgent
+from ..text_analyzer_agent import TextAnalyzerAgent
+from .agent_capability import AgentCapability
+
+with optional_import_block():
+    import chromadb
+    from chromadb.config import Settings
 
 
 class Teachability(AgentCapability):
-    """
-    Teachability uses a vector database to give an agent the ability to remember user teachings,
+    """Teachability uses a vector database to give an agent the ability to remember user teachings,
     where the user is any caller (human or not) sending messages to the teachable agent.
     Teachability is designed to be composable with other agent capabilities.
     To make any conversable agent teachable, instantiate both the agent and the Teachability class,
@@ -44,15 +44,14 @@ class Teachability(AgentCapability):
         max_num_retrievals: Optional[int] = 10,
         llm_config: Optional[Union[dict, bool]] = None,
     ):
-        """
-        Args:
-            verbosity (Optional, int): # 0 (default) for basic info, 1 to add memory operations, 2 for analyzer messages, 3 for memo lists.
-            reset_db (Optional, bool): True to clear the DB before starting. Default False.
-            path_to_db_dir (Optional, str): path to the directory where this particular agent's DB is stored. Default "./tmp/teachable_agent_db"
-            recall_threshold (Optional, float): The maximum distance for retrieved memos, where 0.0 is exact match. Default 1.5. Larger values allow more (but less relevant) memos to be recalled.
-            max_num_retrievals (Optional, int): The maximum number of memos to retrieve from the DB. Default 10.
-            llm_config (dict or False): llm inference configuration passed to TextAnalyzerAgent.
-                If None, TextAnalyzerAgent uses llm_config from the teachable agent.
+        """Args:
+        verbosity (Optional, int): # 0 (default) for basic info, 1 to add memory operations, 2 for analyzer messages, 3 for memo lists.
+        reset_db (Optional, bool): True to clear the DB before starting. Default False.
+        path_to_db_dir (Optional, str): path to the directory where this particular agent's DB is stored. Default "./tmp/teachable_agent_db"
+        recall_threshold (Optional, float): The maximum distance for retrieved memos, where 0.0 is exact match. Default 1.5. Larger values allow more (but less relevant) memos to be recalled.
+        max_num_retrievals (Optional, int): The maximum number of memos to retrieve from the DB. Default 10.
+        llm_config (dict or False): llm inference configuration passed to TextAnalyzerAgent.
+            If None, TextAnalyzerAgent uses llm_config from the teachable agent.
         """
         self.verbosity = verbosity
         self.path_to_db_dir = path_to_db_dir
@@ -93,11 +92,9 @@ class Teachability(AgentCapability):
         self.memo_store.prepopulate()
 
     def process_last_received_message(self, text: Union[dict, str]):
-        """
-        Appends any relevant memos to the message text, and stores any apparent teachings in new memos.
+        """Appends any relevant memos to the message text, and stores any apparent teachings in new memos.
         Uses TextAnalyzerAgent to make decisions about memo storage and retrieval.
         """
-
         # Try to retrieve relevant memos from the DB.
         expanded_text = text
         if self.memo_store.last_memo_id > 0:
@@ -169,7 +166,6 @@ class Teachability(AgentCapability):
 
     def _consider_memo_retrieval(self, comment: Union[dict, str]):
         """Decides whether to retrieve memos from the DB, and add them to the chat context."""
-
         # First, use the comment directly as the lookup key.
         if self.verbosity >= 1:
             print(colored("\nLOOK FOR RELEVANT MEMOS, AS QUESTION-ANSWER PAIRS", "light_yellow"))
@@ -207,7 +203,7 @@ class Teachability(AgentCapability):
             input_text, n_results=self.max_num_retrievals, threshold=self.recall_threshold
         )
 
-        if self.verbosity >= 1:
+        if self.verbosity >= 1:  # noqa: SIM102
             # Was anything retrieved?
             if len(memo_list) == 0:
                 # No. Look at the closest memo.
@@ -243,9 +239,9 @@ class Teachability(AgentCapability):
         return self.teachable_agent.last_message(self.analyzer)["content"]
 
 
+@require_optional_import("chromadb", "teachable")
 class MemoStore:
-    """
-    Provides memory storage and retrieval for a teachable agent, using a vector database.
+    """Provides memory storage and retrieval for a teachable agent, using a vector database.
     Each DB entry (called a memo) is a pair of strings: an input text and an output text.
     The input text might be a question, or a task to perform.
     The output text might be an answer to the question, or advice on how to perform the task.
@@ -258,11 +254,10 @@ class MemoStore:
         reset: Optional[bool] = False,
         path_to_db_dir: Optional[str] = "./tmp/teachable_agent_db",
     ):
-        """
-        Args:
-            - verbosity (Optional, int): 1 to print memory operations, 0 to omit them. 3+ to print memo lists.
-            - reset (Optional, bool): True to clear the DB before starting. Default False.
-            - path_to_db_dir (Optional, str): path to the directory where the DB is stored.
+        """Args:
+        - verbosity (Optional, int): 1 to print memory operations, 0 to omit them. 3+ to print memo lists.
+        - reset (Optional, bool): True to clear the DB before starting. Default False.
+        - path_to_db_dir (Optional, str): path to the directory where the DB is stored.
         """
         self.verbosity = verbosity
         self.path_to_db_dir = path_to_db_dir
@@ -324,9 +319,7 @@ class MemoStore:
         if self.verbosity >= 1:
             print(
                 colored(
-                    "\nINPUT-OUTPUT PAIR ADDED TO VECTOR DATABASE:\n  ID\n    {}\n  INPUT\n    {}\n  OUTPUT\n    {}\n".format(
-                        self.last_memo_id, input_text, output_text
-                    ),
+                    f"\nINPUT-OUTPUT PAIR ADDED TO VECTOR DATABASE:\n  ID\n    {self.last_memo_id}\n  INPUT\n    {input_text}\n  OUTPUT\n    {output_text}\n",
                     "light_yellow",
                 )
             )
@@ -342,9 +335,7 @@ class MemoStore:
         if self.verbosity >= 1:
             print(
                 colored(
-                    "\nINPUT-OUTPUT PAIR RETRIEVED FROM VECTOR DATABASE:\n  INPUT1\n    {}\n  OUTPUT\n    {}\n  DISTANCE\n    {}".format(
-                        input_text, output_text, distance
-                    ),
+                    f"\nINPUT-OUTPUT PAIR RETRIEVED FROM VECTOR DATABASE:\n  INPUT1\n    {input_text}\n  OUTPUT\n    {output_text}\n  DISTANCE\n    {distance}",
                     "light_yellow",
                 )
             )
@@ -365,9 +356,7 @@ class MemoStore:
                 if self.verbosity >= 1:
                     print(
                         colored(
-                            "\nINPUT-OUTPUT PAIR RETRIEVED FROM VECTOR DATABASE:\n  INPUT1\n    {}\n  OUTPUT\n    {}\n  DISTANCE\n    {}".format(
-                                input_text, output_text, distance
-                            ),
+                            f"\nINPUT-OUTPUT PAIR RETRIEVED FROM VECTOR DATABASE:\n  INPUT1\n    {input_text}\n  OUTPUT\n    {output_text}\n  DISTANCE\n    {distance}",
                             "light_yellow",
                         )
                     )
@@ -383,24 +372,21 @@ class MemoStore:
         examples.append({"text": "Please verify that each paper you listed actually uses langchain.", "label": "no"})
         examples.append({"text": "Tell gpt the output should still be latex code.", "label": "no"})
         examples.append({"text": "Hint: convert pdfs to text and then answer questions based on them.", "label": "yes"})
-        examples.append(
-            {"text": "To create a good PPT, include enough content to make it interesting.", "label": "yes"}
-        )
-        examples.append(
-            {
-                "text": "No, for this case the columns should be aspects and the rows should be frameworks.",
-                "label": "no",
-            }
-        )
+        examples.append({
+            "text": "To create a good PPT, include enough content to make it interesting.",
+            "label": "yes",
+        })
+        examples.append({
+            "text": "No, for this case the columns should be aspects and the rows should be frameworks.",
+            "label": "no",
+        })
         examples.append({"text": "When writing code, remember to include any libraries that are used.", "label": "yes"})
         examples.append({"text": "Please summarize the papers by Eric Horvitz on bounded rationality.", "label": "no"})
         examples.append({"text": "Compare the h-index of Daniel Weld and Oren Etzioni.", "label": "no"})
-        examples.append(
-            {
-                "text": "Double check to be sure that the columns in a table correspond to what was asked for.",
-                "label": "yes",
-            }
-        )
+        examples.append({
+            "text": "Double check to be sure that the columns in a table correspond to what was asked for.",
+            "label": "yes",
+        })
         for example in examples:
             self.add_input_output_pair(example["text"], example["label"])
         self._save_memos()

@@ -1,25 +1,19 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-#!/usr/bin/env python3 -m pytest
+# !/usr/bin/env python3 -m pytest
 
 import pytest
 
-from autogen import ConversableAgent, config_list_from_json
+from autogen import ConversableAgent
+from autogen.agentchat.contrib.capabilities.teachability import Teachability
 from autogen.formatting_utils import colored
+from autogen.import_utils import skip_on_missing_imports
 
-from ....conftest import Credentials, skip_openai  # noqa: E402
-
-try:
-    from autogen.agentchat.contrib.capabilities.teachability import Teachability
-except ImportError:
-    skip = True
-else:
-    skip = skip_openai
-
+from ....conftest import Credentials
 
 # Specify the model to use by uncommenting one of the following lines.
 # filter_dict={"model": ["gpt-4-1106-preview"]}
@@ -30,7 +24,6 @@ filter_dict = {"tags": ["gpt-4o-mini"]}
 
 def create_teachable_agent(credentials: Credentials, reset_db=False, verbosity=0):
     """Instantiates a teachable agent using the settings from the top of this file."""
-
     # Start by instantiating any agent that inherits from ConversableAgent.
     teachable_agent = ConversableAgent(
         name="teachable_agent",
@@ -129,10 +122,8 @@ def use_task_advice_pair_phrasing(credentials: Credentials):
     return num_errors, num_tests
 
 
-@pytest.mark.skipif(
-    skip,
-    reason="do not run if dependency is not installed or requested to skip",
-)
+@pytest.mark.openai
+@skip_on_missing_imports(["chromadb"], "teachable")
 def test_teachability_code_paths(credentials_gpt_4o_mini: Credentials):
     """Runs this file's unit tests."""
     total_num_errors, total_num_tests = 0, 0
@@ -160,10 +151,8 @@ def test_teachability_code_paths(credentials_gpt_4o_mini: Credentials):
         )
 
 
-@pytest.mark.skipif(
-    skip,
-    reason="do not run if dependency is not installed or requested to skip",
-)
+@pytest.mark.openai
+@skip_on_missing_imports(["chromadb"], "teachable")
 def test_teachability_accuracy(credentials_gpt_4o_mini: Credentials):
     """A very cheap and fast test of teachability accuracy."""
     print(colored("\nTEST TEACHABILITY ACCURACY", "light_cyan"))

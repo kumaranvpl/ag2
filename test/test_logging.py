@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -171,9 +171,9 @@ def test_log_new_agent(db_connection):
     """
 
     for row in cur.execute(query):
-        assert (
-            row["session_id"] and str(uuid.UUID(row["session_id"], version=4)) == row["session_id"]
-        ), "session id is not valid uuid"
+        assert row["session_id"] and str(uuid.UUID(row["session_id"], version=4)) == row["session_id"], (
+            "session id is not valid uuid"
+        )
         assert row["name"] == agent_name
         assert row["class"] == "AssistantAgent"
         assert row["init_args"] == json.dumps(init_args)
@@ -195,9 +195,9 @@ def test_log_oai_wrapper(db_connection):
     """
 
     for row in cur.execute(query):
-        assert (
-            row["session_id"] and str(uuid.UUID(row["session_id"], version=4)) == row["session_id"]
-        ), "session id is not valid uuid"
+        assert row["session_id"] and str(uuid.UUID(row["session_id"], version=4)) == row["session_id"], (
+            "session id is not valid uuid"
+        )
         saved_init_args = json.loads(row["init_args"])
         assert "config_list" in saved_init_args
         assert "api_key" not in saved_init_args["config_list"][0]
@@ -223,9 +223,9 @@ def test_log_oai_client(db_connection):
     """
 
     for row in cur.execute(query):
-        assert (
-            row["session_id"] and str(uuid.UUID(row["session_id"], version=4)) == row["session_id"]
-        ), "session id is not valid uuid"
+        assert row["session_id"] and str(uuid.UUID(row["session_id"], version=4)) == row["session_id"], (
+            "session id is not valid uuid"
+        )
         assert row["class"] == "AzureOpenAI"
         saved_init_args = json.loads(row["init_args"])
         assert "api_version" in saved_init_args
@@ -236,7 +236,7 @@ def test_to_dict():
     from autogen import Agent
     from autogen.coding import LocalCommandLineCodeExecutor
 
-    agent_executor = LocalCommandLineCodeExecutor(work_dir=Path("."))
+    agent_executor = LocalCommandLineCodeExecutor(work_dir=Path())
 
     agent1 = autogen.ConversableAgent(
         "alice",
@@ -295,9 +295,9 @@ def test_to_dict():
     assert result["foo_val"] == expected_foo_val_field
     assert result["o"] == expected_o_field
     assert len(result["agents"]) == 2
-    for agent in result["agents"]:
-        assert "autogen.agentchat.conversable_agent.ConversableAgent" in agent
-    assert "autogen.agentchat.conversable_agent.ConversableAgent" in result["first_agent"]
+    assert result["agents"][0] == "alice"
+    assert result["agents"][1] == "bob"
+    assert "alice" in result["first_agent"]
 
 
 @patch("logging.Logger.error")

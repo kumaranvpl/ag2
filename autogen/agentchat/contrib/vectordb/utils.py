@@ -1,11 +1,11 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
 import logging
-from typing import Any, Dict, List
+from typing import Any
 
 from termcolor import colored
 
@@ -57,7 +57,6 @@ def filter_results_by_distance(results: QueryResults, distance_threshold: float 
     Returns:
         QueryResults | A filtered results containing only distances smaller than the threshold.
     """
-
     if distance_threshold > 0:
         results = [[(key, value) for key, value in data if value < distance_threshold] for data in results]
 
@@ -106,7 +105,6 @@ def chroma_results_to_query_results(data_dict: dict[str, list[list[Any]]], speci
         ]
         ```
     """
-
     keys = [
         key
         for key in data_dict

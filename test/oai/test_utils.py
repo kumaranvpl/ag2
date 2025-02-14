@@ -1,22 +1,21 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-#!/usr/bin/env python3 -m pytest
+# !/usr/bin/env python3 -m pytest
 
 import json
 import logging
 import os
 import tempfile
-from typing import Dict, List
 from unittest import mock
 from unittest.mock import patch
 
 import pytest
 
-import autogen  # noqa: E402
+import autogen
 from autogen.oai.openai_utils import DEFAULT_AZURE_API_VERSION, filter_config, is_valid_api_key
 
 from ..conftest import MOCK_OPEN_AI_API_KEY
@@ -134,10 +133,10 @@ def test_config_list_from_json():
             for key in config:
                 assert key in json_data[i]
                 assert config[key] == json_data[i][key]
-            i += 1
+            i += 1  # noqa: SIM113
 
-        os.environ["config_list_test"] = JSON_SAMPLE
-        config_list_2 = autogen.config_list_from_json("config_list_test")
+        os.environ["CONFIG_LIST_TEST"] = JSON_SAMPLE
+        config_list_2 = autogen.config_list_from_json("CONFIG_LIST_TEST")
         assert config_list == config_list_2
 
         # Test: the env variable is set to a file path with folder name inside.
@@ -146,7 +145,7 @@ def test_config_list_from_json():
         )
         assert all(config.get("model") in ["gpt-4", "gpt"] for config in config_list_3)
 
-        del os.environ["config_list_test"]
+        del os.environ["CONFIG_LIST_TEST"]
 
         # Test: using the `file_location` parameter.
         config_list_4 = autogen.config_list_from_json(
@@ -160,11 +159,11 @@ def test_config_list_from_json():
         # Test: the env variable is set to a file path.
         fd, temp_name = tempfile.mkstemp()
         json.dump(config_list, os.fdopen(fd, "w+"), indent=4)
-        os.environ["config_list_test"] = temp_name
-        config_list_5 = autogen.config_list_from_json("config_list_test")
+        os.environ["CONFIG_LIST_TEST"] = temp_name
+        config_list_5 = autogen.config_list_from_json("CONFIG_LIST_TEST")
         assert config_list_5 == config_list_2
 
-        del os.environ["config_list_test"]
+        del os.environ["CONFIG_LIST_TEST"]
 
     # Test that an error is thrown when the config list is missing
     with pytest.raises(FileNotFoundError):
@@ -312,7 +311,7 @@ def test_config_list_from_dotenv(mock_os_environ, caplog):
     invalid_model_api_key_map = {
         "gpt-4": "INVALID_API_KEY",  # Simulate an environment var name that doesn't exist
     }
-    with caplog.at_level(logging.ERROR):
+    with caplog.at_level(logging.ERROR):  # noqa: SIM117
         # Mocking `config_list_from_json` to return an empty list and raise an exception when called
         with mock.patch("autogen.config_list_from_json", return_value=[], side_effect=Exception("Mock called")):
             # Call the function with the invalid map
@@ -338,12 +337,12 @@ def test_config_list_from_dotenv(mock_os_environ, caplog):
         # Call the function with the mixed validity map
         config_list = autogen.config_list_from_dotenv(model_api_key_map=invalid_model_api_key_map)
         assert config_list, "Expected configurations to be loaded"
-        assert any(
-            config["model"] == "gpt-3.5-turbo" for config in config_list
-        ), "gpt-3.5-turbo configuration not found"
-        assert all(
-            config["model"] != "gpt-4" for config in config_list
-        ), "gpt-4 configuration found, but was not expected"
+        assert any(config["model"] == "gpt-3.5-turbo" for config in config_list), (
+            "gpt-3.5-turbo configuration not found"
+        )
+        assert all(config["model"] != "gpt-4" for config in config_list), (
+            "gpt-4 configuration found, but was not expected"
+        )
         assert "API key not found or empty for model gpt-4" in caplog.text
 
 
@@ -361,9 +360,9 @@ def test_get_config_list():
     assert config_list, "The config_list should not be empty."
 
     # Check that the config_list has the correct length
-    assert len(config_list) == len(
-        api_keys
-    ), "The config_list should have the same number of items as the api_keys list."
+    assert len(config_list) == len(api_keys), (
+        "The config_list should have the same number of items as the api_keys list."
+    )
 
     # Check that each config in the config_list has the correct structure and data
     for i, config in enumerate(config_list):
@@ -384,9 +383,9 @@ def test_get_config_list():
 
     # Test with None base_urls
     config_list_without_base = autogen.get_config_list(api_keys, None, api_type, api_version)
-    assert all(
-        "base_url" not in config for config in config_list_without_base
-    ), "The configs should not have base_url when None is provided."
+    assert all("base_url" not in config for config in config_list_without_base), (
+        "The configs should not have base_url when None is provided."
+    )
 
     # Test with empty string in api_keys
     api_keys_with_empty = ["key1", "", "key3"]

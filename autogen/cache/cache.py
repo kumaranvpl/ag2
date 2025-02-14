@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -6,22 +6,17 @@
 # SPDX-License-Identifier: MIT
 from __future__ import annotations
 
-import sys
 from types import TracebackType
-from typing import Any, Dict, Optional, Type, TypedDict, Union
+from typing import Any
 
+from ..doc_utils import export_module
 from .abstract_cache_base import AbstractCache
 from .cache_factory import CacheFactory
 
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
-
+@export_module("autogen")
 class Cache(AbstractCache):
-    """
-    A wrapper class for managing cache configuration and instances.
+    """A wrapper class for managing cache configuration and instances.
 
     This class provides a unified interface for creating and interacting with
     different types of cache (e.g., Redis, Disk). It abstracts the underlying
@@ -41,8 +36,7 @@ class Cache(AbstractCache):
 
     @staticmethod
     def redis(cache_seed: str | int = 42, redis_url: str = "redis://localhost:6379/0") -> Cache:
-        """
-        Create a Redis cache instance.
+        """Create a Redis cache instance.
 
         Args:
             cache_seed (Union[str, int], optional): A seed for the cache. Defaults to 42.
@@ -55,8 +49,7 @@ class Cache(AbstractCache):
 
     @staticmethod
     def disk(cache_seed: str | int = 42, cache_path_root: str = ".cache") -> Cache:
-        """
-        Create a Disk cache instance.
+        """Create a Disk cache instance.
 
         Args:
             cache_seed (Union[str, int], optional): A seed for the cache. Defaults to 42.
@@ -74,14 +67,14 @@ class Cache(AbstractCache):
         cache_seed: str | int = 42,
         client: any | None = None,
     ) -> Cache:
-        """
-        Create a Cosmos DB cache instance with 'autogen_cache' as database ID.
+        """Create a Cosmos DB cache instance with 'autogen_cache' as database ID.
 
         Args:
             connection_string (str, optional): Connection string to the Cosmos DB account.
             container_id (str, optional): The container ID for the Cosmos DB account.
             cache_seed (Union[str, int], optional): A seed for the cache.
             client: Optional[CosmosClient]: Pass an existing Cosmos DB client.
+
         Returns:
             Cache: A Cache instance configured for Cosmos DB.
         """
@@ -94,8 +87,7 @@ class Cache(AbstractCache):
         return Cache({"cache_seed": str(cache_seed), "cosmos_db_config": cosmos_db_config})
 
     def __init__(self, config: dict[str, Any]):
-        """
-        Initialize the Cache with the given configuration.
+        """Initialize the Cache with the given configuration.
 
         Validates the configuration keys and creates the cache instance.
 
@@ -110,7 +102,7 @@ class Cache(AbstractCache):
         self.config["cache_seed"] = str(self.config.get("cache_seed", 42))
 
         # validate config
-        for key in self.config.keys():
+        for key in self.config:
             if key not in self.ALLOWED_CONFIG_KEYS:
                 raise ValueError(f"Invalid config key: {key}")
         # create cache instance
@@ -122,8 +114,7 @@ class Cache(AbstractCache):
         )
 
     def __enter__(self) -> Cache:
-        """
-        Enter the runtime context related to the cache object.
+        """Enter the runtime context related to the cache object.
 
         Returns:
             The cache instance for use within a context block.
@@ -136,8 +127,7 @@ class Cache(AbstractCache):
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
-        """
-        Exit the runtime context related to the cache object.
+        """Exit the runtime context related to the cache object.
 
         Cleans up the cache instance and handles any exceptions that occurred
         within the context.
@@ -150,8 +140,7 @@ class Cache(AbstractCache):
         return self.cache.__exit__(exc_type, exc_value, traceback)
 
     def get(self, key: str, default: Any | None = None) -> Any | None:
-        """
-        Retrieve an item from the cache.
+        """Retrieve an item from the cache.
 
         Args:
             key (str): The key identifying the item in the cache.
@@ -164,8 +153,7 @@ class Cache(AbstractCache):
         return self.cache.get(key, default)
 
     def set(self, key: str, value: Any) -> None:
-        """
-        Set an item in the cache.
+        """Set an item in the cache.
 
         Args:
             key (str): The key under which the item is to be stored.
@@ -174,8 +162,7 @@ class Cache(AbstractCache):
         self.cache.set(key, value)
 
     def close(self) -> None:
-        """
-        Close the cache.
+        """Close the cache.
 
         Perform any necessary cleanup, such as closing connections or releasing resources.
         """

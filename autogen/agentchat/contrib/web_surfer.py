@@ -1,20 +1,17 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
 import copy
-import json
 import logging
 import re
-from dataclasses import dataclass
 from datetime import datetime
-from typing import Annotated, Any, Callable, Dict, List, Literal, Optional, Tuple, Union
+from typing import Annotated, Any, Callable, Literal, Optional, Union
 
-from ... import Agent, AssistantAgent, ConversableAgent, GroupChat, GroupChatManager, OpenAIWrapper, UserProxyAgent
+from ... import Agent, AssistantAgent, ConversableAgent, OpenAIWrapper, UserProxyAgent
 from ...browser_utils import SimpleTextBrowser
-from ...code_utils import content_str
 from ...oai.openai_utils import filter_config
 from ...token_count_utils import count_token, get_max_token_limit
 
@@ -133,7 +130,7 @@ class WebSurferAgent(ConversableAgent):
             current_page = self.browser.viewport_current_page
             total_pages = len(self.browser.viewport_pages)
 
-            header += f"Viewport position: Showing page {current_page+1} of {total_pages}.\n"
+            header += f"Viewport position: Showing page {current_page + 1} of {total_pages}.\n"
             return (header, self.browser.viewport)
 
         @self._user_proxy.register_for_execution()
@@ -167,7 +164,7 @@ class WebSurferAgent(ConversableAgent):
         @self._assistant.register_for_llm(
             name="visit_page", description="Visit a webpage at a given URL and return its text."
         )
-        def _visit_page(url: Annotated[str, "The relative or absolute url of the webapge to visit."]) -> str:
+        def _visit_page(url: Annotated[str, "The relative or absolute url of the webpage to visit."]) -> str:
             self.browser.visit_page(url)
             header, content = _browser_state()
             return header.strip() + "\n=======================\n" + content

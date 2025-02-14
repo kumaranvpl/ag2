@@ -1,17 +1,17 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-#!/usr/bin/env python3 -m pytest
+# !/usr/bin/env python3 -m pytest
 
 import pytest
 
 import autogen
 from autogen.agentchat.contrib.capabilities.agent_capability import AgentCapability
 
-from ..conftest import Credentials, reason, skip_openai  # noqa: E402
+from ..conftest import Credentials
 
 
 class MockAgentReplies(AgentCapability):
@@ -31,7 +31,7 @@ class MockAgentReplies(AgentCapability):
         agent.register_reply([autogen.Agent, None], mock_reply, position=2)
 
 
-@pytest.mark.skipif(skip_openai, reason=reason)
+@pytest.mark.openai
 def test_nested(
     credentials_gpt_4o_mini: Credentials,
     credentials_gpt_4o: Credentials,
@@ -147,21 +147,17 @@ def test_nested(
         nested_chat_queue,
         trigger=user,
     )
-    user.initiate_chats(
-        [
-            {"recipient": assistant, "message": tasks[0], "max_turns": 1},
-            {"recipient": assistant_2, "message": tasks[1], "max_turns": 1},
-        ]
-    )
+    user.initiate_chats([
+        {"recipient": assistant, "message": tasks[0], "max_turns": 1},
+        {"recipient": assistant_2, "message": tasks[1], "max_turns": 1},
+    ])
 
 
 def test_sync_nested_chat():
     def is_termination(msg):
-        if isinstance(msg, str) and msg == "FINAL_RESULT":
-            return True
-        elif isinstance(msg, dict) and msg.get("content") == "FINAL_RESULT":
-            return True
-        return False
+        return (isinstance(msg, str) and msg == "FINAL_RESULT") or (
+            isinstance(msg, dict) and msg.get("content") == "FINAL_RESULT"
+        )
 
     inner_assistant = autogen.AssistantAgent(
         "Inner-assistant",
@@ -195,12 +191,10 @@ def test_sync_nested_chat():
 
 @pytest.mark.asyncio
 async def test_async_nested_chat():
-    def is_termination(msg):
-        if isinstance(msg, str) and msg == "FINAL_RESULT":
-            return True
-        elif isinstance(msg, dict) and msg.get("content") == "FINAL_RESULT":
-            return True
-        return False
+    def is_termination(msg) -> bool:
+        return (isinstance(msg, str) and msg == "FINAL_RESULT") or (
+            isinstance(msg, dict) and msg.get("content") == "FINAL_RESULT"
+        )
 
     inner_assistant = autogen.AssistantAgent(
         "Inner-assistant",
@@ -236,12 +230,10 @@ async def test_async_nested_chat():
 
 @pytest.mark.asyncio
 async def test_async_nested_chat_chat_id_validation():
-    def is_termination(msg):
-        if isinstance(msg, str) and msg == "FINAL_RESULT":
-            return True
-        elif isinstance(msg, dict) and msg.get("content") == "FINAL_RESULT":
-            return True
-        return False
+    def is_termination(msg) -> bool:
+        return (isinstance(msg, str) and msg == "FINAL_RESULT") or (
+            isinstance(msg, dict) and msg.get("content") == "FINAL_RESULT"
+        )
 
     inner_assistant = autogen.AssistantAgent(
         "Inner-assistant",
@@ -273,12 +265,10 @@ async def test_async_nested_chat_chat_id_validation():
 
 
 def test_sync_nested_chat_in_group():
-    def is_termination(msg):
-        if isinstance(msg, str) and msg == "FINAL_RESULT":
-            return True
-        elif isinstance(msg, dict) and msg.get("content") == "FINAL_RESULT":
-            return True
-        return False
+    def is_termination(msg) -> bool:
+        return (isinstance(msg, str) and msg == "FINAL_RESULT") or (
+            isinstance(msg, dict) and msg.get("content") == "FINAL_RESULT"
+        )
 
     inner_assistant = autogen.AssistantAgent(
         "Inner-assistant",
@@ -320,12 +310,10 @@ def test_sync_nested_chat_in_group():
 
 @pytest.mark.asyncio
 async def test_async_nested_chat_in_group():
-    def is_termination(msg):
-        if isinstance(msg, str) and msg == "FINAL_RESULT":
-            return True
-        elif isinstance(msg, dict) and msg.get("content") == "FINAL_RESULT":
-            return True
-        return False
+    def is_termination(msg) -> bool:
+        return (isinstance(msg, str) and msg == "FINAL_RESULT") or (
+            isinstance(msg, dict) and msg.get("content") == "FINAL_RESULT"
+        )
 
     inner_assistant = autogen.AssistantAgent(
         "Inner-assistant",

@@ -1,39 +1,33 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-#!/usr/bin/env python3 -m pytest
+# !/usr/bin/env python3 -m pytest
 
 import os
 
 import pytest
-from sentence_transformers import SentenceTransformer
 
-from autogen import AssistantAgent, config_list_from_json
+from autogen import AssistantAgent
+from autogen.agentchat.contrib.retrieve_user_proxy_agent import (
+    RetrieveUserProxyAgent,
+)
+from autogen.import_utils import optional_import_block, skip_on_missing_imports
 
-from ....conftest import Credentials, reason, skip_openai  # noqa: E402
+from ....conftest import Credentials
 
-try:
-    import pgvector
-
-    from autogen.agentchat.contrib.retrieve_user_proxy_agent import (
-        RetrieveUserProxyAgent,
-    )
-except ImportError:
-    skip = True
-else:
-    skip = False
+with optional_import_block() as result:
+    import pgvector  # noqa: F401
+    from sentence_transformers import SentenceTransformer
 
 
 test_dir = os.path.join(os.path.dirname(__file__), "../../..", "test_files")
 
 
-@pytest.mark.skipif(
-    skip or skip_openai,
-    reason="dependency is not installed OR requested to skip",
-)
+@pytest.mark.openai
+@skip_on_missing_imports(["chromadb", "pgvector", "IPython", "sentence_transformers"], "retrievechat-pgvector")
 def test_retrievechat(credentials_gpt_4o_mini: Credentials):
     conversations = {}
 

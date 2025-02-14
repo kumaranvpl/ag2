@@ -1,13 +1,13 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Literal, Optional, Union
 
-from autogen.agentchat.agent import Agent
-from autogen.agentchat.assistant_agent import ConversableAgent
+from ..agent import Agent
+from ..assistant_agent import ConversableAgent
 
 system_message = """You are an expert in text analysis.
 The user will give you TEXT to analyze.
@@ -26,16 +26,15 @@ class TextAnalyzerAgent(ConversableAgent):
         llm_config: Optional[Union[dict, bool]] = None,
         **kwargs,
     ):
-        """
-        Args:
-            name (str): name of the agent.
-            system_message (str): system message for the ChatCompletion inference.
-            human_input_mode (str): This agent should NEVER prompt the human for input.
-            llm_config (dict or False): llm inference configuration.
-                Please refer to [OpenAIWrapper.create](/docs/reference/oai/client#create)
-                for available options.
-                To disable llm-based auto reply, set to False.
-            **kwargs (dict): other kwargs in [ConversableAgent](../conversable_agent#init).
+        """Args:
+        name (str): name of the agent.
+        system_message (str): system message for the ChatCompletion inference.
+        human_input_mode (str): This agent should NEVER prompt the human for input.
+        llm_config (dict or False): llm inference configuration.
+            Please refer to [OpenAIWrapper.create](/docs/api-reference/autogen/OpenAIWrapper#create)
+            for available options.
+            To disable llm-based auto reply, set to False.
+        **kwargs (dict): other kwargs in [ConversableAgent](/docs/api-reference/autogen/ConversableAgent#conversableagent).
         """
         super().__init__(
             name=name,
@@ -54,7 +53,8 @@ class TextAnalyzerAgent(ConversableAgent):
     ) -> tuple[bool, Union[str, dict, None]]:
         """Analyzes the given text as instructed, and returns the analysis as a message.
         Assumes exactly two messages containing the text to analyze and the analysis instructions.
-        See Teachability.analyze for an example of how to use this method."""
+        See Teachability.analyze for an example of how to use this method.
+        """
         if self.llm_config is False:
             raise ValueError("TextAnalyzerAgent requires self.llm_config to be set in its base class.")
         if messages is None:
@@ -69,8 +69,10 @@ class TextAnalyzerAgent(ConversableAgent):
         # Assemble the message.
         text_to_analyze = "# TEXT\n" + text_to_analyze + "\n"
         analysis_instructions = "# INSTRUCTIONS\n" + analysis_instructions + "\n"
-        msg_text = "\n".join(
-            [analysis_instructions, text_to_analyze, analysis_instructions]
-        )  # Repeat the instructions.
+        msg_text = "\n".join([
+            analysis_instructions,
+            text_to_analyze,
+            analysis_instructions,
+        ])  # Repeat the instructions.
         # Generate and return the analysis string.
         return self.generate_oai_reply([{"role": "user", "content": msg_text}], None, None)[1]

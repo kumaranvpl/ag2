@@ -1,10 +1,10 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-#!/usr/bin/env python3 -m pytest
+# !/usr/bin/env python3 -m pytest
 
 from typing import Annotated
 
@@ -13,7 +13,7 @@ import pytest
 import autogen
 from autogen.agentchat.contrib.society_of_mind_agent import SocietyOfMindAgent
 
-from ...conftest import Credentials, skip_openai  # noqa: E402
+from ...conftest import Credentials
 
 
 def test_society_of_mind_agent():
@@ -206,10 +206,7 @@ def test_custom_preparer():
     assert external_agent.chat_messages[soc][-1]["content"] == "All tests passed."
 
 
-@pytest.mark.skipif(
-    skip_openai,
-    reason="do not run openai tests",
-)
+@pytest.mark.openai
 def test_function_calling(credentials_all: Credentials):
     llm_config = {"config_list": credentials_all.config_list}
     inner_llm_config = {
@@ -284,10 +281,7 @@ def test_function_calling(credentials_all: Credentials):
     )
 
 
-@pytest.mark.skipif(
-    skip_openai,
-    reason="do not run openai tests",
-)
+@pytest.mark.openai
 def test_tool_use(credentials_all: Credentials):
     llm_config = credentials_all.llm_config
     inner_llm_config = credentials_all.llm_config

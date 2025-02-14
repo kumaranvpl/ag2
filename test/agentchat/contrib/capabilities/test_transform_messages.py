@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -12,10 +12,10 @@ import autogen
 from autogen.agentchat.contrib.capabilities.transform_messages import TransformMessages
 from autogen.agentchat.contrib.capabilities.transforms import MessageHistoryLimiter, MessageTokenLimiter
 
-from ....conftest import Credentials, skip_openai  # noqa: E402
+from ....conftest import Credentials
 
 
-@pytest.mark.skipif(skip_openai, reason="Requested to skip openai test.")
+@pytest.mark.openai
 def test_transform_messages_capability(credentials_gpt_4o_mini: Credentials) -> None:
     """Test the TransformMessages capability to handle long contexts.
 
@@ -56,7 +56,7 @@ def test_transform_messages_capability(credentials_gpt_4o_mini: Credentials) -> 
                 clear_history=False,
             )
         except Exception as e:
-            assert False, f"Chat initiation failed with error {str(e)}"
+            assert False, f"Chat initiation failed with error {e!s}"
 
 
 if __name__ == "__main__":

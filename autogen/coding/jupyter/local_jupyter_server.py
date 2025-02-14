@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -10,11 +10,11 @@ import atexit
 import json
 import secrets
 import signal
-import socket
 import subprocess
 import sys
 from types import TracebackType
-from typing import Optional, Type, Union, cast
+
+from ...doc_utils import export_module
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -22,9 +22,12 @@ else:
     from typing_extensions import Self
 
 from .base import JupyterConnectable, JupyterConnectionInfo
+from .import_utils import require_jupyter_kernel_gateway_installed
 from .jupyter_client import JupyterClient
 
 
+@require_jupyter_kernel_gateway_installed()
+@export_module("autogen.coding.jupyter")
 class LocalJupyterServer(JupyterConnectable):
     class GenerateToken:
         pass

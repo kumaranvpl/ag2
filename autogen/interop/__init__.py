@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -9,4 +9,11 @@ from .langchain import LangChainInteroperability
 from .pydantic_ai import PydanticAIInteroperability
 from .registry import register_interoperable_class
 
-__all__ = ["Interoperability", "Interoperable", "register_interoperable_class"]
+__all__ = [
+    "CrewAIInteroperability",
+    "Interoperability",
+    "Interoperable",
+    "LangChainInteroperability",
+    "PydanticAIInteroperability",
+    "register_interoperable_class",
+]

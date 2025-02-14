@@ -1,23 +1,22 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-#!/usr/bin/env python3 -m pytest
+# !/usr/bin/env python3 -m pytest
 
 import io
 from contextlib import redirect_stdout
 
 import pytest
 
-import autogen
 from autogen import AssistantAgent, UserProxyAgent, gather_usage_summary
 
-from ..conftest import Credentials, reason, skip_openai  # noqa: E402
+from ..conftest import Credentials
 
 
-@pytest.mark.skipif(skip_openai, reason=reason)
+@pytest.mark.openai
 def test_gathering(credentials_gpt_4o: Credentials, credentials_gpt_4o_mini: Credentials):
     assistant1 = AssistantAgent(
         "assistant",
@@ -69,7 +68,7 @@ def test_gathering(credentials_gpt_4o: Credentials, credentials_gpt_4o_mini: Cre
     print("Total usage summary:", total_usage_summary)
 
 
-@pytest.mark.skipif(skip_openai, reason=reason)
+@pytest.mark.openai
 def test_agent_usage(credentials: Credentials):
     config_list = credentials.config_list
     assistant = AssistantAgent(

@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 import os
@@ -6,23 +6,17 @@ import os
 import pytest
 
 from autogen import UserProxyAgent
-from autogen.agentchat.contrib.captainagent import CaptainAgent
+from autogen.agentchat.contrib.captainagent.captainagent import CaptainAgent
+from autogen.import_utils import optional_import_block, skip_on_missing_imports
 
-from ...conftest import KEY_LOC, OAI_CONFIG_LIST, Credentials, reason, skip_openai  # noqa: E402
+from ...conftest import KEY_LOC, OAI_CONFIG_LIST, Credentials
 
-try:
-    import chromadb
-    import huggingface_hub
-except ImportError:
-    skip = True
-else:
-    skip = False
+with optional_import_block() as result:
+    import chromadb  # noqa: F401
+    import huggingface_hub  # noqa: F401
 
 
-@pytest.mark.skipif(
-    skip_openai,
-    reason=reason,
-)
+@pytest.mark.openai
 def test_captain_agent_from_scratch(credentials_all: Credentials):
     config_list = credentials_all.config_list
     llm_config = {
@@ -61,10 +55,8 @@ def test_captain_agent_from_scratch(credentials_all: Credentials):
     print(result)
 
 
-@pytest.mark.skipif(
-    skip_openai or skip,
-    reason=reason,
-)
+@pytest.mark.openai
+@skip_on_missing_imports(["chromadb", "huggingface_hub"], "autobuild")
 def test_captain_agent_with_library(credentials_all: Credentials):
     config_list = credentials_all.config_list
     llm_config = {

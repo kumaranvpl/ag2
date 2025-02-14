@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -12,7 +12,6 @@ from typing import Annotated, Any, Literal, Optional
 import pytest
 from pydantic import BaseModel, Field
 
-from autogen._pydantic import PYDANTIC_V1, model_dump
 from autogen.tools.dependency_injection import Field as AG2Field
 from autogen.tools.function_utils import (
     get_default_values,
@@ -84,6 +83,13 @@ def test_get_parameter_json_schema() -> None:
         "description": "parameter a",
         "default": "3.14",
     }
+    assert get_parameter_json_schema(
+        "d", Annotated[Optional[str], AG2Field(description="parameter d")], {"d": None}
+    ) == {
+        "anyOf": [{"type": "string"}, {"type": "null"}],
+        "default": None,
+        "description": "parameter d",
+    }
 
     class B(BaseModel):
         b: float
@@ -121,7 +127,7 @@ def test_get_param_annotations() -> None:
     typed_signature = get_typed_signature(f)
     param_annotations = get_param_annotations(typed_signature)
 
-    assert param_annotations == expected, param_annotations
+    assert param_annotations == expected, param_annotations  # type: ignore[comparison-overlap]
 
 
 def test_get_missing_annotations() -> None:
@@ -133,7 +139,7 @@ def test_get_missing_annotations() -> None:
     assert unannotated_with_default == {"b"}
 
     def _f2(a: str, b) -> str:  # type: ignore[empty-body,no-untyped-def]
-        "ok"
+        """Ok"""
 
     missing, unannotated_with_default = get_missing_annotations(get_typed_signature(_f2), ["a", "b"])
     assert missing == {"b"}
@@ -148,7 +154,11 @@ def test_get_missing_annotations() -> None:
 
 
 def test_get_parameters() -> None:
-    def f(a: Annotated[str, AG2Field(description="Parameter a")], b=1, c: Annotated[float, AG2Field(description="Parameter c")] = 1.0):  # type: ignore[no-untyped-def]
+    def f(  # type: ignore[no-untyped-def]
+        a: Annotated[str, AG2Field(description="Parameter a")],
+        b=1,  # type: ignore[no-untyped-def]
+        c: Annotated[float, AG2Field(description="Parameter c")] = 1.0,
+    ):
         pass
 
     typed_signature = get_typed_signature(f)
@@ -165,7 +175,7 @@ def test_get_parameters() -> None:
         "required": ["a"],
     }
 
-    actual = model_dump(get_parameters(required, param_annotations, default_values))
+    actual = (get_parameters(required, param_annotations, default_values)).model_dump()
 
     assert actual == expected, actual
 
@@ -220,7 +230,7 @@ def test_get_function_schema_missing() -> None:
 
 
 def test_get_function_schema() -> None:
-    expected_v2 = {
+    expected = {
         "type": "function",
         "function": {
             "description": "function g",
@@ -250,46 +260,11 @@ def test_get_function_schema() -> None:
         },
     }
 
-    # the difference is that the v1 version does not handle Union types (Optional is Union[T, None])
-    expected_v1 = {
-        "type": "function",
-        "function": {
-            "description": "function g",
-            "name": "fancy name for g",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "a": {"type": "string", "description": "Parameter a"},
-                    "b": {"type": "integer", "description": "b", "default": 2},
-                    "c": {"type": "number", "description": "Parameter c", "default": 0.1},
-                    "d": {
-                        "type": "object",
-                        "additionalProperties": {
-                            "type": "array",
-                            "minItems": 2,
-                            "maxItems": 2,
-                            "items": [{"type": "integer"}, {"type": "array", "items": {"type": "number"}}],
-                        },
-                        "description": "d",
-                    },
-                },
-                "required": ["a", "d"],
-            },
-        },
-    }
-
     actual = get_function_schema(g, description="function g", name="fancy name for g")
-
-    if PYDANTIC_V1:
-        assert actual == expected_v1, actual
-    else:
-        assert actual == expected_v2, actual
+    assert actual == expected, actual
 
     actual = get_function_schema(a_g, description="function g", name="fancy name for g")
-    if PYDANTIC_V1:
-        assert actual == expected_v1, actual
-    else:
-        assert actual == expected_v2, actual
+    assert actual == expected, actual
 
 
 CurrencySymbol = Literal["USD", "EUR"]
@@ -413,7 +388,7 @@ def test_serialize_to_json() -> None:
     assert serialize_to_str("abc") == "abc"
     assert serialize_to_str(123) == "123"
     assert serialize_to_str([123, 456]) == "[123, 456]"
-    assert serialize_to_str({"a": 1, "b": 2.3}) == '{"a": 1, "b": 2.3}'
+    assert serialize_to_str({"a": 1, "b": 2.3}) == '{"a": 1, "b": 2.3}'.replace('"', "'")
 
     class A(BaseModel):
         a: int
@@ -421,3 +396,15 @@ def test_serialize_to_json() -> None:
         c: str
 
     assert serialize_to_str(A(a=1, b=2.3, c="abc")) == '{"a":1,"b":2.3,"c":"abc"}'
+
+
+def test_serilize_to_str_list_pydantic() -> None:
+    class A(BaseModel):
+        a: int
+        b: float
+        c: str
+
+    assert (
+        serialize_to_str([A(a=1, b=2.3, c="abc"), A(a=4, b=5.6, c="def")])
+        == "[{'a': 1, 'b': 2.3, 'c': 'abc'}, {'a': 4, 'b': 5.6, 'c': 'def'}]"
+    )

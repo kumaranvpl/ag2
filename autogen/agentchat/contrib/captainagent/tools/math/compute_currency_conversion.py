@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 from autogen.coding.func_with_reqs import with_requirements
@@ -6,8 +6,7 @@ from autogen.coding.func_with_reqs import with_requirements
 
 @with_requirements(["sympy"])
 def compute_currency_conversion(amount, exchange_rate):
-    """
-    Compute the currency conversion of the given amount using the provided exchange rate.
+    """Compute the currency conversion of the given amount using the provided exchange rate.
 
     Args:
     amount (float): The amount to be converted.

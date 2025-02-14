@@ -1,32 +1,28 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-#!/usr/bin/env python3 -m pytest
+# !/usr/bin/env python3 -m pytest
 
 import os
-import sys
 
 import pytest
 
 from autogen.agentchat import AssistantAgent, UserProxyAgent
+from autogen.tools import tool
 
-from ..conftest import Credentials, reason, skip_openai  # noqa: E402
+from ..conftest import Credentials, credentials_all_llms, suppress_gemini_resource_exhausted
 
 here = os.path.abspath(os.path.dirname(__file__))
 
 
-@pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"] or skip_openai,
-    reason="do not run on MacOS or windows OR " + reason,
-)
-def test_ai_user_proxy_agent(credentials_gpt_4o_mini: Credentials):
+def _test_ai_user_proxy_agent(credentials: Credentials) -> None:
     conversations = {}
     # autogen.ChatCompletion.start_logging(conversations)
 
-    config_list = credentials_gpt_4o_mini.config_list
+    config_list = credentials.config_list
 
     assistant = AssistantAgent(
         "assistant",
@@ -60,7 +56,15 @@ def test_ai_user_proxy_agent(credentials_gpt_4o_mini: Credentials):
     print("Result summary:", res.summary)
 
 
-@pytest.mark.skipif(skip_openai, reason=reason)
+@pytest.mark.parametrize("credentials_from_test_param", credentials_all_llms, indirect=True)
+@suppress_gemini_resource_exhausted
+def test_ai_user_proxy_agent(
+    credentials_from_test_param: Credentials,
+) -> None:
+    _test_ai_user_proxy_agent(credentials_from_test_param)
+
+
+@pytest.mark.openai
 def test_gpt4omini(credentials_gpt_4o_mini: Credentials, human_input_mode="NEVER", max_consecutive_auto_reply=5):
     config_list = credentials_gpt_4o_mini.config_list
     llm_config = {
@@ -100,7 +104,7 @@ If "Thank you" or "You\'re welcome" are said in the conversation, then say TERMI
     assert not isinstance(user.use_docker, bool)  # None or str
 
 
-@pytest.mark.skipif(skip_openai, reason=reason)
+@pytest.mark.openai
 def test_create_execute_script(
     credentials_gpt_4o_mini: Credentials, human_input_mode="NEVER", max_consecutive_auto_reply=3
 ):
@@ -151,7 +155,7 @@ print('Hello world!')
     # autogen.ChatCompletion.stop_logging()
 
 
-@pytest.mark.skipif(skip_openai, reason=reason)
+@pytest.mark.openai
 def test_tsp(credentials_gpt_4o_mini: Credentials, human_input_mode="NEVER", max_consecutive_auto_reply=2):
     config_list = credentials_gpt_4o_mini.config_list
     hard_questions = [
@@ -184,6 +188,47 @@ def test_tsp(credentials_gpt_4o_mini: Credentials, human_input_mode="NEVER", max
     # autogen.ChatCompletion.stop_logging()
     # print(chat_res.summary)
     print(chat_res.cost)
+
+
+@pytest.mark.openai
+def test_standalone(credentials_gpt_4o_mini: Credentials):
+    config_list = credentials_gpt_4o_mini.config_list
+
+    x_assistant = AssistantAgent(name="x_assistant", llm_config={"temperature": 0, "config_list": config_list})
+
+    @tool()
+    def get_twitter_hot_topic() -> str:
+        return "Hot topic of the day on Twitter is #AI, and an influencer who is talking about it is @elonmusk"
+
+    hot_topic_res = x_assistant.run(
+        "Find out today's hot topic and an influencer who is talking about it on X",
+        tools=get_twitter_hot_topic,
+        user_input=False,
+    )
+
+    assert "AI" in hot_topic_res.summary
+    assert "elonmusk" in hot_topic_res.summary
+
+
+@pytest.mark.openai
+@pytest.mark.asyncio
+async def test_standalone_async(credentials_gpt_4o_mini: Credentials):
+    config_list = credentials_gpt_4o_mini.config_list
+
+    x_assistant = AssistantAgent(name="x_assistant", llm_config={"temperature": 0, "config_list": config_list})
+
+    @tool()
+    def get_twitter_hot_topic() -> str:
+        return "Hot topic of the day on Twitter is #AI, and an influencer who is talking about it is @elonmusk"
+
+    hot_topic_res = await x_assistant.a_run(
+        "Find out today's hot topic and an influencer who is talking about it on X",
+        tools=get_twitter_hot_topic,
+        user_input=False,
+    )
+
+    assert "AI" in hot_topic_res.summary
+    assert "elonmusk" in hot_topic_res.summary
 
 
 if __name__ == "__main__":

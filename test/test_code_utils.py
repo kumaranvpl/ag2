@@ -1,10 +1,10 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-#!/usr/bin/env python3 -m pytest
+# !/usr/bin/env python3 -m pytest
 
 import os
 import tempfile
@@ -30,15 +30,13 @@ from autogen.code_utils import (
     infer_lang,
     is_docker_running,
 )
+from autogen.import_utils import skip_on_missing_imports
 
-from .conftest import Credentials, skip_docker
+from .conftest import Credentials
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-if skip_docker or not is_docker_running() or not decide_use_docker(use_docker=None):
-    skip_docker_test = True
-else:
-    skip_docker_test = False
+skip_docker_test = not (is_docker_running() and decide_use_docker(use_docker=None))
 
 
 def test_infer_lang():
@@ -161,9 +159,7 @@ def scrape(url):
    text = soup.find("div", {"id": "bodyContent"}).text
    return title, text
 ```
-""".replace(
-            "\n", "\r\n"
-        )
+""".replace("\n", "\r\n")
     )
     print(codeblocks)
     assert len(codeblocks) == 1 and codeblocks[0][0] == "python"
@@ -181,6 +177,7 @@ def scrape(url):
     assert len(codeblocks) == 1 and codeblocks[0] == ("", "source setup.sh")
 
 
+@pytest.mark.docker
 @pytest.mark.skipif(skip_docker_test, reason="docker is not running or requested to skip docker tests")
 def test_execute_code(use_docker=True):
     # Test execute code and save the code to a file.
@@ -245,6 +242,7 @@ def test_execute_code(use_docker=True):
             assert isinstance(image, str)
 
 
+@pytest.mark.docker
 @pytest.mark.skipif(skip_docker_test, reason="docker is not running or requested to skip docker tests")
 def test_execute_code_with_custom_filename_on_docker():
     with tempfile.TemporaryDirectory() as tempdir:
@@ -259,6 +257,7 @@ def test_execute_code_with_custom_filename_on_docker():
         assert image == "python:codetest.py"
 
 
+@pytest.mark.docker
 @pytest.mark.skipif(
     skip_docker_test,
     reason="docker is not running or requested to skip docker tests",
@@ -388,11 +387,8 @@ def test_create_virtual_env_with_extra_args():
         assert venv_context.env_name == os.path.split(temp_dir)[1]
 
 
+@skip_on_missing_imports(["openai"])
 def _test_improve(credentials_all: Credentials):
-    try:
-        import openai
-    except ImportError:
-        return
     config_list = credentials_all.config_list
     improved, _ = improve_function(
         "autogen/math_utils.py",

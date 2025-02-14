@@ -1,19 +1,22 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 
 
 from abc import ABC
-from typing import Annotated, Any, Callable, Literal, Optional, Type, TypeVar, Union
+from typing import Annotated, Any, Callable, Literal, Optional, TypeVar, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, create_model
 
+from ..doc_utils import export_module
+
 PetType = TypeVar("PetType", bound=Literal["cat", "dog"])
 
-__all__ = ["BaseMessage", "wrap_message", "get_annotated_type_for_message_classes"]
+__all__ = ["BaseMessage", "get_annotated_type_for_message_classes", "wrap_message"]
 
 
+@export_module("autogen.messages")
 class BaseMessage(BaseModel, ABC):
     uuid: UUID
 
@@ -34,10 +37,11 @@ def camel2snake(name: str) -> str:
     return "".join(["_" + i.lower() if i.isupper() else i for i in name]).lstrip("_")
 
 
-_message_classes: dict[str, Type[BaseModel]] = {}
+_message_classes: dict[str, type[BaseModel]] = {}
 
 
-def wrap_message(message_cls: Type[BaseMessage]) -> Type[BaseModel]:
+@export_module("autogen.messages")
+def wrap_message(message_cls: type[BaseMessage]) -> type[BaseModel]:
     """Wrap a message class with a type field to be used in a union type
 
     This is needed for proper serialization and deserialization of messages in a union type.
@@ -71,18 +75,27 @@ def wrap_message(message_cls: Type[BaseMessage]) -> Type[BaseModel]:
         def print(self, f: Optional[Callable[..., Any]] = None) -> None:
             self.content.print(f)  # type: ignore[attr-defined]
 
-    Wrapper = create_model(message_cls.__name__, __base__=WrapperBase)
+    wrapper_cls = create_model(message_cls.__name__, __base__=WrapperBase)
 
-    _message_classes[type_name] = Wrapper
+    # Preserve the original class's docstring and other attributes
+    wrapper_cls.__doc__ = message_cls.__doc__
+    wrapper_cls.__module__ = message_cls.__module__
 
-    return Wrapper
+    # Copy any other relevant attributes/metadata from the original class
+    if hasattr(message_cls, "__annotations__"):
+        wrapper_cls.__annotations__ = message_cls.__annotations__
+
+    _message_classes[type_name] = wrapper_cls
+
+    return wrapper_cls
 
 
-def get_annotated_type_for_message_classes() -> Type[Any]:
+@export_module("autogen.messages")
+def get_annotated_type_for_message_classes() -> type[Any]:
     # this is a dynamic type so we need to disable the type checker
     union_type = Union[tuple(_message_classes.values())]  # type: ignore[valid-type]
     return Annotated[union_type, Field(discriminator="type")]  # type: ignore[return-value]
 
 
-def get_message_classes() -> dict[str, Type[BaseModel]]:
+def get_message_classes() -> dict[str, type[BaseModel]]:
     return _message_classes

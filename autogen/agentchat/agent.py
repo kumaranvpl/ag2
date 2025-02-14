@@ -1,13 +1,18 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-from typing import Any, Dict, List, Optional, Protocol, Union, runtime_checkable
+from typing import Any, Optional, Protocol, Union, runtime_checkable
+
+from ..doc_utils import export_module
+
+__all__ = ["Agent", "LLMAgent"]
 
 
 @runtime_checkable
+@export_module("autogen")
 class Agent(Protocol):
     """(In preview) A protocol for Agent.
 
@@ -23,7 +28,8 @@ class Agent(Protocol):
     @property
     def description(self) -> str:
         """The description of the agent. Used for the agent's introduction in
-        a group chat setting."""
+        a group chat setting.
+        """
         ...
 
     def send(
@@ -127,6 +133,7 @@ class Agent(Protocol):
 
 
 @runtime_checkable
+@export_module("autogen")
 class LLMAgent(Agent, Protocol):
     """(In preview) A protocol for an LLM agent."""
 

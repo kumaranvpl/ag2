@@ -1,11 +1,10 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
 import copy
-from typing import Dict, List
 
 from ....formatting_utils import colored
 from ...conversable_agent import ConversableAgent
@@ -48,10 +47,9 @@ class TransformMessages:
     """
 
     def __init__(self, *, transforms: list[MessageTransform] = [], verbose: bool = True):
-        """
-        Args:
-            transforms: A list of message transformations to apply.
-            verbose: Whether to print logs of each transformation or not.
+        """Args:
+        transforms: A list of message transformations to apply.
+        verbose: Whether to print logs of each transformation or not.
         """
         self._transforms = transforms
         self._verbose = verbose

@@ -1,4 +1,4 @@
-# Copyright (c) 2023 - 2024, Owners of https://github.com/ag2ai
+# Copyright (c) 2023 - 2025, AG2ai, Inc., AG2ai open-source projects maintainers and core contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -7,35 +7,34 @@
 import base64
 import json
 import os
-import re
 import sys
 import uuid
 from pathlib import Path
 from types import TracebackType
-from typing import Any, ClassVar, List, Optional, Type, Union
+from typing import Optional, Union
 
-from autogen.coding.utils import silence_pip
+from ...doc_utils import export_module
 
 if sys.version_info >= (3, 11):
     from typing import Self
 else:
     from typing_extensions import Self
 
-
-from ...agentchat.agent import LLMAgent
 from ..base import CodeBlock, CodeExecutor, CodeExtractor, IPythonCodeResult
 from ..markdown_code_extractor import MarkdownCodeExtractor
+from ..utils import silence_pip
 from .base import JupyterConnectable, JupyterConnectionInfo
 from .jupyter_client import JupyterClient
 
 
+@export_module("autogen.coding.jupyter")
 class JupyterCodeExecutor(CodeExecutor):
     def __init__(
         self,
         jupyter_server: Union[JupyterConnectable, JupyterConnectionInfo],
         kernel_name: str = "python3",
         timeout: int = 60,
-        output_dir: Union[Path, str] = Path("."),
+        output_dir: Union[Path, str] = Path(),
     ):
         """(Experimental) A code executor class that executes code statefully using
         a Jupyter server supplied to this class.
