@@ -303,8 +303,10 @@ class CohereClient:
                 elif chunk.type == "message-start":
                     response_id = chunk.id
                 elif chunk.type == "message-end":
-                    prompt_tokens = chunk.delta.usage.tokens.input_tokens
-                    completion_tokens = chunk.delta.usage.tokens.output_tokens
+                    prompt_tokens = (
+                        chunk.delta.usage.billed_units.input_tokens
+                    )  # Note total (billed+non-billed) available with ...usage.tokens...
+                    completion_tokens = chunk.delta.usage.billed_units.output_tokens
 
             total_tokens = prompt_tokens + completion_tokens
         else:
@@ -333,8 +335,10 @@ class CohereClient:
                 ans: str = response.message.content[0].text
 
             # Not using billed_units, but that may be better for cost purposes
-            prompt_tokens = response.usage.tokens.input_tokens
-            completion_tokens = response.usage.tokens.output_tokens
+            prompt_tokens = (
+                response.usage.billed_units.input_tokens
+            )  # Note total (billed+non-billed) available with ...usage.tokens...
+            completion_tokens = response.usage.billed_units.output_tokens
             total_tokens = prompt_tokens + completion_tokens
 
             response_id = response.id
