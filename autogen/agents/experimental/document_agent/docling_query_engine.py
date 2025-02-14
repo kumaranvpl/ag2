@@ -5,7 +5,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from autogen.import_utils import optional_import_block, require_optional_import
 
@@ -69,8 +69,8 @@ class DoclingMdQueryEngine:
 
     def init_db(
         self,
-        input_dir: Optional[Path | str] = None,
-        input_doc_paths: Optional[list[Path | str]] = None,
+        input_dir: Optional[Union[Path, str]] = None,
+        input_doc_paths: Optional[list[Union[Path, str]]] = None,
         collection_name: Optional[str] = None,
     ) -> None:
         """
@@ -127,7 +127,7 @@ class DoclingMdQueryEngine:
         return str(response)
 
     def add_docs(
-        self, new_doc_dir: Optional[Path | str] = None, new_doc_paths: Optional[list[Path | str]] = None
+        self, new_doc_dir: Optional[Union[Path, str]] = None, new_doc_paths: Optional[list[Union[Path, str]]] = None
     ) -> None:
         """
         Add additional documents to the existing vector index.
@@ -148,7 +148,7 @@ class DoclingMdQueryEngine:
             self.index.insert(doc)
 
     def _load_doc(  # type: ignore
-        self, input_dir: Optional[Path | str], input_docs: Optional[list[Path | str]]
+        self, input_dir: Optional[Union[Path, str]], input_docs: Optional[list[Union[Path, str]]]
     ) -> list["LlamaDocument"]:
         """
         Load documents from a directory and/or a list of file paths.
