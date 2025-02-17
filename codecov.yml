@@ -19,7 +19,6 @@ coverage:
         target: auto
         threshold: 1%
         base: auto
-        informational: true
 
 # Configure codecov bot behavior
 comment:
