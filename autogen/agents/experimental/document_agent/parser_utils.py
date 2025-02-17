@@ -19,7 +19,7 @@ with optional_import_block():
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 @require_optional_import(["docling"], "rag")
@@ -50,8 +50,6 @@ def docling_parse_docs(  # type: ignore[no-any-unimported]
     Returns:
         list[ConversionResult]: The result of the conversion.
     """
-    logging.basicConfig(level=logging.INFO)
-
     input_doc_paths: list[Path] = handle_input(input_file_path, output_dir=output_dir_path)
 
     if not input_doc_paths:

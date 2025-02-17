@@ -107,13 +107,15 @@ def handle_input(input_path: Union[Path, str], output_dir: Union[Path, str] = ".
     """Process the input string and return the appropriate file paths"""
 
     output_dir = preprocess_path(str_or_path=output_dir, is_dir=True, mk_path=True)
-
     if isinstance(input_path, str) and is_url(input_path):
         _logger.info("Detected URL. Downloading content...")
         return [download_url(url=input_path, output_dir=output_dir)]
-    else:
-        input_path = preprocess_path(input_path)
-    if input_path.is_dir():
+
+    if isinstance(input_path, str):
+        input_path = Path(input_path)
+    if not input_path.exists():
+        raise ValueError("The input provided does not exist.")
+    elif input_path.is_dir():
         _logger.info("Detected directory. Listing files...")
         return list_files(directory=input_path)
     elif input_path.is_file():
@@ -124,7 +126,7 @@ def handle_input(input_path: Union[Path, str], output_dir: Union[Path, str] = ".
 
 
 def preprocess_path(
-    str_or_path: Union[Path, str], mk_path: bool = True, is_file: bool = False, is_dir: bool = True
+    str_or_path: Union[Path, str], mk_path: bool = False, is_file: bool = False, is_dir: bool = True
 ) -> Path:
     """Preprocess the path for file operations.
 
