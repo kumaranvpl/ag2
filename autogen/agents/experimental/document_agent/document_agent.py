@@ -60,6 +60,8 @@ TASK_MANAGER_SYSTEM_MESSAGE = """
         }
     2. You would hand off control to the appropriate agent based on the context variables.
 
+    Put all file paths and URLs into the ingestions. A http/https URL is also a valid path and should be ingested.
+
     Please don't output anything else.
     """
 DEFAULT_ERROR_SWARM_MESSAGE: str = """
@@ -249,9 +251,10 @@ class DocumentAgent(ConversableAgent):
                 ),
                 OnCondition(
                     self._summary_agent,
-                    "If there are no DocumentsToIngest or QueriesToRun in context variables, transfer to summary_agent",
+                    "Create a summary of the query result",
                     available=summary_task,
                 ),
+                AfterWork(AfterWorkOption.STAY),
             ],
         )
 
@@ -303,7 +306,7 @@ class DocumentAgent(ConversableAgent):
             after_work=AfterWorkOption.TERMINATE,
         )
         if last_speaker != self._summary_agent:
-            return False, DEFAULT_ERROR_SWARM_MESSAGE
+            return True, DEFAULT_ERROR_SWARM_MESSAGE
         return True, chat_result.summary
 
     def _init_swarm_agents(self, agents: list[ConversableAgent]) -> None:
