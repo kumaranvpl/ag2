@@ -98,8 +98,7 @@ class DocumentTriageAgent(ConversableAgent):
     def __init__(self, llm_config: Dict[str, Any]):
         # Add the structured message to the LLM configuration
         structured_config_list = deepcopy(llm_config)
-        for config in structured_config_list["config_list"]:
-            config["response_format"] = DocumentTask
+        structured_config_list["response_format"] = DocumentTask
 
         super().__init__(
             name="DocumentTriageAgent",
