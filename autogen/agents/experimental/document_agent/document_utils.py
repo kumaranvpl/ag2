@@ -24,6 +24,7 @@ def is_url(url: str) -> bool:
     It checks whether the URL has a valid scheme and network location.
     """
     try:
+        url = url.strip()
         result = urlparse(url)
         # urlparse will not raise an exception for invalid URLs, so we need to check the components
         return_bool = bool(result.scheme and result.netloc)
