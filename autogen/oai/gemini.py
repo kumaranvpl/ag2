@@ -163,8 +163,10 @@ class GeminiClient:
                 "Google Cloud project and compute location cannot be set when using an API Key!"
             )
 
+        self.api_version = kwargs.get("api_version")
+
         # Store the response format, if provided (for structured outputs)
-        self._response_format: Optional[Type[BaseModel]] = None
+        self._response_format: Optional[type[BaseModel]] = None
 
     def message_retrieval(self, response) -> list:
         """Retrieve and return a list of strings or a list of Choice.Message from the response.
@@ -210,6 +212,7 @@ class GeminiClient:
             )
 
         params.get("api_type", "google")  # not used
+        http_options = {"api_version": self.api_version} if self.api_version else None
         messages = params.get("messages", [])
         stream = params.get("stream", False)
         n_response = params.get("n", 1)
@@ -273,7 +276,7 @@ class GeminiClient:
             chat = model.start_chat(history=gemini_messages[:-1], response_validation=response_validation)
             response = chat.send_message(gemini_messages[-1].parts, stream=stream, safety_settings=safety_settings)
         else:
-            client = genai.Client(api_key=self.api_key)
+            client = genai.Client(api_key=self.api_key, http_options=http_options)
             generate_content_config = GenerateContentConfig(
                 safety_settings=safety_settings,
                 system_instruction=system_instruction,
@@ -372,8 +375,8 @@ class GeminiClient:
 
         return response_oai
 
-    def _oai_content_to_gemini_content(self, message: dict[str, Any]) -> tuple[list, str]:
-        """Convert AutoGen content to Gemini parts, catering for text and tool calls"""
+    def _oai_content_to_gemini_content(self, message: dict[str, Any]) -> tuple[list[Any], str]:
+        """Convert AG2 content to Gemini parts, catering for text and tool calls"""
         rst = []
 
         if "role" in message and message["role"] == "tool":
@@ -598,6 +601,20 @@ class GeminiClient:
             return [GeminiClient._convert_type_null_to_nullable(item) for item in schema]
         return schema
 
+    @staticmethod
+    def _unwrap_references(function_parameters: dict[str, Any]) -> dict[str, Any]:
+        if "properties" not in function_parameters:
+            return function_parameters
+
+        function_parameters_copy = copy.deepcopy(function_parameters)
+
+        for property_name, property_value in function_parameters["properties"].items():
+            if "$defs" in property_value:
+                function_parameters_copy["properties"][property_name] = dict(jsonref.replace_refs(property_value))
+                function_parameters_copy["properties"][property_name].pop("$defs")
+
+        return function_parameters_copy
+
     def _tools_to_gemini_tools(self, tools: list[dict[str, Any]]) -> list[Tool]:
         """Create Gemini tools (as typically requires Callables)"""
         functions = []
@@ -606,10 +623,11 @@ class GeminiClient:
                 tool["function"]["parameters"] = GeminiClient._convert_type_null_to_nullable(
                     tool["function"]["parameters"]
                 )
+                function_parameters = GeminiClient._unwrap_references(tool["function"]["parameters"])
                 function = vaiFunctionDeclaration(
                     name=tool["function"]["name"],
                     description=tool["function"]["description"],
-                    parameters=tool["function"]["parameters"],
+                    parameters=function_parameters,
                 )
             else:
                 function = GeminiClient._create_gemini_function_declaration(tool)
@@ -686,8 +704,12 @@ class GeminiClient:
     @staticmethod
     def _create_gemini_function_parameters(function_parameter: dict[str, any]) -> dict[str, any]:
         """Convert function parameters to Gemini format, recursive"""
+        function_parameter = GeminiClient._unwrap_references(function_parameter)
+
         if "type" in function_parameter:
             function_parameter["type"] = function_parameter["type"].upper()
+            # If the schema was created from pydantic BaseModel, it will "title" attribute which needs to be removed
+            function_parameter.pop("title", None)
 
         # Parameter properties and items
         if "properties" in function_parameter:
