@@ -136,6 +136,10 @@ class Crawl4AITool(Tool):
                 api_type = lite_llm_config.pop("api_type", "openai")  # type: ignore[assignment]
                 # litellm uses "gemini" instead of "google" for the api_type
                 api_type = api_type if api_type != "google" else "gemini"
+                if api_type == "ollama" and "client_host" in lite_llm_config:
+                    lite_llm_config["api_base"] = lite_llm_config.pop("client_host")
+                    # lite_llm_config.pop("client_host")
+                    # lite_llm_config["api_base"] = "http://127.0.0.1:1"
 
             except (KeyError, TypeError):
                 raise ValueError("llm_config must be a valid config dictionary.")
