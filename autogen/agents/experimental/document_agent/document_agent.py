@@ -5,12 +5,13 @@
 import logging
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from pathlib import Path
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from autogen import Agent, ConversableAgent
-from autogen.agentchat.contrib.swarm_agent import (
+from .... import Agent, ConversableAgent
+from ....agentchat.contrib.swarm_agent import (
     AfterWork,
     AfterWorkOption,
     OnCondition,
@@ -18,11 +19,10 @@ from autogen.agentchat.contrib.swarm_agent import (
     initiate_swarm_chat,
     register_hand_off,
 )
-from autogen.agents.experimental.document_agent.docling_query_engine import DoclingMdQueryEngine
-from autogen.doc_utils import export_module
-from autogen.oai.client import OpenAIWrapper
-
+from ....doc_utils import export_module
+from ....oai.client import OpenAIWrapper
 from .docling_doc_ingest_agent import DoclingDocIngestAgent
+from .docling_query_engine import DoclingMdQueryEngine
 
 __all__ = ["DocumentAgent"]
 
@@ -91,11 +91,9 @@ class DocumentTask(BaseModel):
 
 
 class DocumentTriageAgent(ConversableAgent):
-    """
-    The DocumentTriageAgent is responsible for deciding what type of task to perform from user requests.
-    """
+    """The DocumentTriageAgent is responsible for deciding what type of task to perform from user requests."""
 
-    def __init__(self, llm_config: Dict[str, Any]):
+    def __init__(self, llm_config: dict[str, Any]):
         # Add the structured message to the LLM configuration
         structured_config_list = deepcopy(llm_config)
         structured_config_list["response_format"] = DocumentTask
@@ -124,18 +122,18 @@ class DocumentAgent(ConversableAgent):
 
     def __init__(
         self,
-        name: str = "Document_Agent",
-        llm_config: Dict[str, Any] = {},
-        system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
+        name: Optional[str] = None,
+        llm_config: Optional[dict[str, Any]] = None,
+        system_message: Optional[str] = None,
+        parsed_docs_path: Optional[Union[str, Path]] = None,
     ):
-        """
-        Initialize the DocumentAgent.
+        """Initialize the DocumentAgent.
 
         Args:
-        name (str): The name of the DocumentAgent.
-        llm_config (Dict[str, Any]): The configuration for the LLM.
-        system_message (str): The system message for the ChatCompletion inference.
-        **kwargs: Additional keyword arguments to pass to the parent class.
+            name (Optional[str]): The name of the DocumentAgent.
+            llm_config (Optional[dict[str, Any]]): The configuration for the LLM.
+            system_message (Optional[str]): The system message for the DocumentAgent.
+            parsed_docs_path (Union[str, Path]): The path where parsed documents will be stored.
 
         The DocumentAgent is responsible for generating a group of agents to solve a task.
 
@@ -147,6 +145,11 @@ class DocumentAgent(ConversableAgent):
         - Query Agent: responsible for answering the user's questions.
         - Summary Agent: responsible for generating a summary of the user's questions.
         """
+        name = name or "DocumentAgent"
+        llm_config = llm_config or {}
+        system_message = system_message or DEFAULT_SYSTEM_MESSAGE
+        parsed_docs_path = parsed_docs_path or "./parsed_docs"
+
         super().__init__(
             name=name,
             system_message=system_message,
@@ -155,7 +158,7 @@ class DocumentAgent(ConversableAgent):
         )
         self.register_reply([ConversableAgent, None], self.generate_inner_swarm_reply, position=0)
 
-        self._context_variables = {
+        self._context_variables: dict[str, Any] = {
             "DocumentsToIngest": [],
             "QueriesToRun": [],
             "QueryResults": [],
@@ -166,7 +169,7 @@ class DocumentAgent(ConversableAgent):
         def initiate_tasks(
             ingestions: list[Ingest],
             queries: list[Query],
-            context_variables: dict,  # type: ignore[type-arg]
+            context_variables: dict[str, Any],
         ) -> SwarmResult:
             logger.info("initiate_tasks context_variables", context_variables)
             if "TaskInitiated" in context_variables:
@@ -195,7 +198,9 @@ class DocumentAgent(ConversableAgent):
         )
 
         query_engine = DoclingMdQueryEngine()
-        self._data_ingestion_agent = DoclingDocIngestAgent(llm_config=llm_config, query_engine=query_engine)
+        self._data_ingestion_agent = DoclingDocIngestAgent(
+            llm_config=llm_config, query_engine=query_engine, parsed_docs_path=parsed_docs_path
+        )
 
         def execute_rag_query(context_variables: dict) -> SwarmResult:  # type: ignore[type-arg]
             query = context_variables["QueriesToRun"][0]["query"]
@@ -218,17 +223,17 @@ class DocumentAgent(ConversableAgent):
             llm_config=llm_config,
         )
 
-        def has_ingest_tasks(agent: ConversableAgent, messages: List[Dict[str, Any]]) -> bool:
+        def has_ingest_tasks(agent: ConversableAgent, messages: list[dict[str, Any]]) -> bool:
             logger.debug("has_ingest_tasks context_variables:", agent._context_variables)
             return len(agent.get_context("DocumentsToIngest")) > 0
 
-        def has_query_tasks(agent: ConversableAgent, messages: List[Dict[str, Any]]) -> bool:
+        def has_query_tasks(agent: ConversableAgent, messages: list[dict[str, Any]]) -> bool:
             logger.debug("has_query_tasks context_variables:", agent._context_variables)
             if len(agent.get_context("DocumentsToIngest")) > 0:
                 return False
             return len(agent.get_context("QueriesToRun")) > 0
 
-        def summary_task(agent: ConversableAgent, messages: List[Dict[str, Any]]) -> bool:
+        def summary_task(agent: ConversableAgent, messages: list[dict[str, Any]]) -> bool:
             return (
                 len(agent.get_context("DocumentsToIngest")) == 0
                 and len(agent.get_context("QueriesToRun")) == 0
@@ -280,10 +285,10 @@ class DocumentAgent(ConversableAgent):
 
     def generate_inner_swarm_reply(
         self,
-        messages: Union[list[dict], str, None] = None,  # type: ignore[type-arg]
+        messages: Optional[Union[list[dict[str, Any]], str]] = None,
         sender: Optional[Agent] = None,
         config: Optional[OpenAIWrapper] = None,
-    ) -> tuple[bool, Union[str, dict, None]]:  # type: ignore[type-arg]
+    ) -> tuple[bool, Optional[Union[str, dict[str, Any]]]]:
         context_variables = {
             "CompletedTaskCount": 0,
             "DocumentsToIngest": [],
@@ -312,7 +317,7 @@ class DocumentAgent(ConversableAgent):
         for agent in agents:
             agent.reset()
 
-    def _get_document_input_message(self, messages: Union[list[dict], str, None]) -> str:  # type: ignore[type-arg]
+    def _get_document_input_message(self, messages: Optional[Union[list[dict[str, Any]], str]]) -> str:  # type: ignore[type-arg]
         if isinstance(messages, str):
             return messages
         elif (

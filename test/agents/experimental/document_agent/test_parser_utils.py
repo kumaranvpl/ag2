@@ -150,6 +150,7 @@ class TestDoclingParseDocs:
         user_agent = UserProxyAgent(
             name="UserAgent",
             human_input_mode="ALWAYS",
+            code_execution_config=False,
         )
 
         parser_tool.register_for_execution(user_agent)

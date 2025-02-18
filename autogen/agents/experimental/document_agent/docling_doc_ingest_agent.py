@@ -6,12 +6,14 @@ import logging
 from pathlib import Path
 from typing import Literal, Optional, Union
 
-from autogen import ConversableAgent
-from autogen.agentchat.contrib.swarm_agent import SwarmResult
-from autogen.agents.experimental.document_agent.parser_utils import docling_parse_docs
-
+from .... import ConversableAgent
+from ....agentchat.contrib.swarm_agent import SwarmResult
+from ....doc_utils import export_module
+from ..document_agent.parser_utils import docling_parse_docs
 from .docling_query_engine import DoclingMdQueryEngine
 from .document_utils import preprocess_path
+
+__all__ = ["DoclingDocIngestAgent"]
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -23,6 +25,7 @@ You are an expert in parsing and understanding text. You can use {DOCLING_PARSE_
 """
 
 
+@export_module("autogen.agents.experimental")
 class DoclingDocIngestAgent(ConversableAgent):
     """
     A DoclingDocIngestAgent is a swarm agent that ingests documents using the docling_parse_docs tool.
@@ -30,9 +33,9 @@ class DoclingDocIngestAgent(ConversableAgent):
 
     def __init__(
         self,
-        name: str = "DoclingDocIngestAgent",
+        name: Optional[str] = None,
         llm_config: Optional[Union[dict, Literal[False]]] = None,  # type: ignore[type-arg]
-        parsed_docs_path: Union[Path, str] = "./parsed_docs",
+        parsed_docs_path: Optional[Union[Path, str]] = None,
         query_engine: Optional[DoclingMdQueryEngine] = None,
     ):
         """
@@ -44,12 +47,12 @@ class DoclingDocIngestAgent(ConversableAgent):
         parsed_docs_path (Union[Path, str]): The path where parsed documents will be stored.
         query_engine (Optional[DoclingMdQueryEngine]): The DoclingMdQueryEngine to use for querying documents.
         """
-        if query_engine:
-            self.docling_query_engine = query_engine
-        else:
-            self.docling_query_engine = DoclingMdQueryEngine()
+        name = name or "DoclingDocIngestAgent"
 
+        parsed_docs_path = parsed_docs_path or Path("./parsed_docs")
         parsed_docs_path = preprocess_path(str_or_path=parsed_docs_path)
+
+        self.docling_query_engine = query_engine or DoclingMdQueryEngine()
 
         def data_ingest_task(context_variables: dict) -> SwarmResult:  # type: ignore[type-arg]
             """

@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from autogen.import_utils import optional_import_block, require_optional_import
+from ....import_utils import optional_import_block, require_optional_import
 
 with optional_import_block():
     import chromadb
