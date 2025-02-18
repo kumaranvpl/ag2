@@ -16,18 +16,20 @@ import autogen
 from ..conftest import Credentials
 
 
-@pytest.mark.openai
-def test_structured_output(credentials_gpt_4o: Credentials):
-    class ResponseModel(BaseModel):
-        question: str
-        short_answer: str
-        reasoning: str
-        difficulty: float
+class ResponseModel(BaseModel):
+    question: str
+    short_answer: str
+    reasoning: str
+    difficulty: float
 
+
+@pytest.mark.openai
+@pytest.mark.parametrize("response_format", [ResponseModel, ResponseModel.model_json_schema()])
+def test_structured_output(credentials_gpt_4o: Credentials, response_format):
     config_list = credentials_gpt_4o.config_list
 
     for config in config_list:
-        config["response_format"] = ResponseModel
+        config["response_format"] = response_format
 
     llm_config = {"config_list": config_list, "cache_seed": 43}
 
@@ -56,19 +58,14 @@ def test_structured_output(credentials_gpt_4o: Credentials):
 
 
 @pytest.mark.openai
-def test_global_structured_output(credentials_gpt_4o: Credentials):
-    class ResponseModel(BaseModel):
-        question: str
-        short_answer: str
-        reasoning: str
-        difficulty: float
-
+@pytest.mark.parametrize("response_format", [ResponseModel, ResponseModel.model_json_schema()])
+def test_global_structured_output(credentials_gpt_4o: Credentials, response_format):
     config_list = credentials_gpt_4o.config_list
 
     llm_config = {
         "config_list": config_list,
         "cache_seed": 43,
-        "response_format": ResponseModel,
+        "response_format": response_format,
     }
 
     user_proxy = autogen.UserProxyAgent(

@@ -992,12 +992,13 @@ class OpenAIWrapper:
             if cache_client is not None:
                 with cache_client as cache:
                     # Try to get the response from cache
+                    print(params)
                     key = get_key(
                         {
                             **params,
                             **{"response_format": json.dumps(TypeAdapter(params["response_format"]).json_schema())},
                         }
-                        if "response_format" in params and isinstance(params["response_format"], BaseModel)
+                        if "response_format" in params and not isinstance(params["response_format"], dict)
                         else params
                     )
                     request_ts = get_current_ts()
