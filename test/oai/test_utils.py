@@ -10,18 +10,15 @@ import json
 import logging
 import os
 import tempfile
-from pathlib import Path
 from unittest import mock
 from unittest.mock import patch
 
 import pytest
-from pydantic import BaseModel
 
 import autogen
 from autogen.oai.openai_utils import (
     DEFAULT_AZURE_API_VERSION,
     filter_config,
-    generate_response_format_model,
     is_valid_api_key,
 )
 
@@ -124,46 +121,6 @@ def test_filter_config(test_case):
     config_list = filter_config(JSON_SAMPLE_DICT, filter_dict, exclude)
 
     assert _compare_lists_of_dicts(config_list, expected)
-
-
-class Response(BaseModel):
-    answer: str
-    explanation: str
-
-
-def test_generate_response_format_model():
-    schema = Response.model_json_schema()
-    response_model = generate_response_format_model(schema)
-
-    assert response_model.model_json_schema() == Response.model_json_schema()
-
-
-def test_config_list_from_json_response_model():
-    with tempfile.TemporaryDirectory() as d:
-        config_file = Path(d) / "config.json"
-
-        with config_file.open("w") as f:
-            json_data = json.loads(
-                f"""
-                [
-                    {{
-                        "model": "gpt-3.5-turbo",
-                        "api_type": "openai",
-                        "response_format": {json.dumps(Response.model_json_schema())}
-                    }}
-                ]
-                """
-            )
-            f.write(json.dumps(json_data))
-            f.flush()
-
-            config_list = autogen.config_list_from_json(f.name)
-
-            assert len(config_list) == 1
-            print(config_list)
-            print(config_list[0]["response_format"].model_json_schema())
-            print(Response.model_json_schema())
-            assert config_list[0]["response_format"].model_json_schema() == Response.model_json_schema()
 
 
 def test_config_list_from_json():

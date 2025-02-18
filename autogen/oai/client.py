@@ -409,8 +409,6 @@ class OpenAIClient:
                         self.response_format or params["response_format"]
                     )
 
-                print("!" * 200)
-                print(kwargs["response_format"])
                 return self._oai_client.chat.completions.create(*args, **kwargs)
 
             create_or_parse = _create_or_parse
