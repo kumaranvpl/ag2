@@ -17,6 +17,7 @@ from typing import Any, Callable, Optional, TypeVar
 import pytest
 
 import autogen
+from autogen import UserProxyAgent
 from autogen.import_utils import optional_import_block
 
 KEY_LOC = str((Path(__file__).parents[1] / "notebook").resolve())
@@ -333,6 +334,11 @@ def get_mock_credentials(model: str, temperature: float = 0.6) -> Credentials:
 @pytest.fixture
 def mock_credentials() -> Credentials:
     return get_mock_credentials(model="gpt-4o")
+
+
+@pytest.fixture
+def user_proxy() -> UserProxyAgent:
+    return UserProxyAgent(name="User", human_input_mode="NEVER", code_execution_config=False)
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
