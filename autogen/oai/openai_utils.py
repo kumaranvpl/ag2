@@ -10,19 +10,15 @@ import json
 import logging
 import os
 import re
-import sys
 import tempfile
 import time
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import Any, Optional, Union
 
-from datamodel_code_generator import generate
 from dotenv import find_dotenv, load_dotenv
 from openai import OpenAI
 from openai.types.beta.assistant import Assistant
 from packaging.version import parse
-from pydantic import BaseModel
 
 from ..doc_utils import export_module
 
@@ -499,36 +495,6 @@ def _satisfies_criteria(value: Any, criteria_values: Any) -> bool:
         return value in criteria_values
 
 
-def generate_response_format_model(response_format: dict[str, Any]) -> BaseModel:
-    """Generate a Pydantic model from a response format dictionary.
-
-    Args:
-        response_format (dict): A dictionary representing the response format in OpenAPI format.
-
-    Returns:
-        BaseModel: A Pydantic model class representing the response format.
-    """
-    with TemporaryDirectory() as d:
-        temp_dir = Path(d)
-        output = temp_dir / "model.py"
-        title = response_format["title"]
-
-        generate(input_=json.dumps(response_format), output=output)
-
-        # Add the temporary directory to sys.path
-        sys.path.insert(0, str(temp_dir))
-
-        try:
-            # Import the module
-            module_name = output.stem
-            module = importlib.import_module(module_name)
-            class_ = getattr(module, title)
-            return class_  # type: ignore [no-any-return]
-        finally:
-            # Clean up: remove the temporary directory from sys.path
-            sys.path.pop(0)
-
-
 @export_module("autogen")
 def config_list_from_json(
     env_or_file: str,
@@ -591,10 +557,6 @@ def config_list_from_json(
             config_list = json.load(json_file)
 
     config_list = filter_config(config_list, filter_dict)
-
-    for config in config_list:
-        if "response_format" in config:
-            config["response_format"] = generate_response_format_model(config["response_format"])
 
     return filter_config(config_list, filter_dict)
 
