@@ -433,14 +433,14 @@ Ensure the JSON is properly formatted and matches the schema exactly."""
             if isinstance(self._response_format, BaseModel):
                 return self._response_format.model_validate(json_data)
             else:
-                return json_data
+                return json_str
         except Exception as e:
             raise ValueError(f"Failed to parse response as valid JSON matching the schema for Structured Output: {e!s}")
 
 
 def _format_json_response(response: Any) -> str:
     """Formats the JSON response for structured outputs using the format method if it exists."""
-    return response.format() if isinstance(response, FormatterProtocol) else response
+    return response.format() if isinstance(response, FormatterProtocol) and not isinstance(response, str) else response
 
 
 @require_optional_import("anthropic", "anthropic")
