@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from typing import Any, Callable
 
 from ....import_utils import optional_import_block, skip_on_missing_imports
@@ -44,6 +45,7 @@ class LangchainFactory(ABC):
 
     @classmethod
     def get_first_llm_config(cls, llm_config: dict[str, Any]) -> dict[str, Any]:
+        llm_config = deepcopy(llm_config)
         if "config_list" not in llm_config:
             if "model" in llm_config:
                 return llm_config
