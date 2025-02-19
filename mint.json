@@ -1351,6 +1351,14 @@
               ]
             },
             {
+              "group": "dummy",
+              "pages": [
+                "docs/api-reference/autogen/dummy/overview",
+                "docs/api-reference/autogen/dummy/add",
+                "docs/api-reference/autogen/dummy/ag2_ceil"
+              ]
+            },
+            {
               "group": "exception_utils",
               "pages": [
                 "docs/api-reference/autogen/exception_utils/overview",
