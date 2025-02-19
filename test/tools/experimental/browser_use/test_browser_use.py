@@ -18,7 +18,14 @@ with optional_import_block():
 
 
 @skip_on_missing_imports(
-    ["langchain_anthropic", "langchain_google_genai", "langchain_ollama", "langchain_openai", "langchain_core", "browser_use"],
+    [
+        "langchain_anthropic",
+        "langchain_google_genai",
+        "langchain_ollama",
+        "langchain_openai",
+        "langchain_core",
+        "browser_use",
+    ],
     "browser-use",
 )
 class TestBrowserUseToolOpenai:

@@ -34,7 +34,14 @@ class BrowserUseResult(BaseModel):
 
 
 @require_optional_import(
-    ["langchain_anthropic", "langchain_google_genai", "langchain_ollama", "langchain_openai", "langchain_core", "browser_use"],
+    [
+        "langchain_anthropic",
+        "langchain_google_genai",
+        "langchain_ollama",
+        "langchain_openai",
+        "langchain_core",
+        "browser_use",
+    ],
     "browser-use",
 )
 @export_module("autogen.tools.experimental")

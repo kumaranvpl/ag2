@@ -20,6 +20,9 @@ test_api_key = "test"  # pragma: allowlist secret
     "browser-use",
 )
 class TestLangchainFactory:
+    def test_number_of_factories(self) -> None:
+        assert len(LangchainFactory._factories) == 6
+
     @pytest.mark.parametrize(
         ("llm_config", "expected"),
         [
