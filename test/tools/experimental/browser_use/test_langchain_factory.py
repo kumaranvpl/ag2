@@ -7,10 +7,11 @@ from typing import Any, Optional
 import pytest
 
 from autogen.import_utils import optional_import_block, skip_on_missing_imports
-from autogen.tools.experimental.browser_use.langchain_factory import ChatOpenAIFactory, LangchainFactory
 
 with optional_import_block():
     from langchain_openai import AzureChatOpenAI, ChatOpenAI
+
+    from autogen.tools.experimental.browser_use.langchain_factory import ChatOpenAIFactory, LangchainFactory
 
 
 @skip_on_missing_imports(

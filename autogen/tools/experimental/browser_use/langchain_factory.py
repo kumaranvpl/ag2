@@ -24,7 +24,7 @@ __all__ = ["LangchainFactory"]
     "browser-use",
 )
 class LangchainFactory(ABC):
-    _factories: list["LangchainFactory"] = []
+    _factories: set["LangchainFactory"] = set()
 
     @classmethod
     def create_base_chat_model(cls, llm_config: dict[str, Any]) -> "BaseChatModel":  # type: ignore [no-any-unimported]
@@ -38,7 +38,7 @@ class LangchainFactory(ABC):
     @classmethod
     def register_factory(cls) -> Callable[[type["LangchainFactory"]], type["LangchainFactory"]]:
         def decorator(factory: type["LangchainFactory"]) -> type["LangchainFactory"]:
-            cls._factories.append(factory())
+            cls._factories.add(factory())
             return factory
 
         return decorator

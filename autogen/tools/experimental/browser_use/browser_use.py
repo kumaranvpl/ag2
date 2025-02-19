@@ -10,11 +10,12 @@ from ....doc_utils import export_module
 from ....import_utils import optional_import_block, require_optional_import
 from ... import Depends, Tool
 from ...dependency_injection import on
-from .langchain_factory import LangchainFactory
 
 with optional_import_block():
     from browser_use import Agent, Controller
     from browser_use.browser.browser import Browser, BrowserConfig
+
+    from .langchain_factory import LangchainFactory
 
 
 __all__ = ["BrowserUseResult", "BrowserUseTool"]
