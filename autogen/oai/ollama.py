@@ -496,10 +496,10 @@ class OllamaClient:
 
         try:
             # Parse JSON and validate against the Pydantic model if Pydantic model was provided
-            if issubclass(self._response_format, BaseModel):
-                return self._response_format.model_validate_json(response)
-            else:
+            if isinstance(self._response_format, dict):
                 return response
+            else:
+                return self._response_format.model_validate_json(response)
         except Exception as e:
             raise ValueError(f"Failed to parse response as valid JSON matching the schema for Structured Output: {e!s}")
 

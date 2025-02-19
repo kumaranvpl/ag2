@@ -578,10 +578,10 @@ class GeminiClient:
         try:
             # Parse JSON and validate against the Pydantic model if Pydantic model was provided
             json_data = json.loads(response)
-            if isinstance(self._response_format, BaseModel):
-                return self._response_format.model_validate(json_data)
-            else:
+            if isinstance(self._response_format, dict):
                 return json_data
+            else:
+                return self._response_format.model_validate(json_data)
         except Exception as e:
             raise ValueError(f"Failed to parse response as valid JSON matching the schema for Structured Output: {e!s}")
 

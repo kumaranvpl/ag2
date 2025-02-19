@@ -384,10 +384,10 @@ class AnthropicClient:
             return
 
         # Get the schema of the Pydantic model
-        if issubclass(self._response_format, BaseModel):
-            schema = self._response_format.model_json_schema()
-        else:
+        if isinstance(self._response_format, dict):
             schema = self._response_format
+        else:
+            schema = self._response_format.model_json_schema()
 
         # Add instructions for JSON formatting
         format_content = f"""Please provide your response as a JSON object that matches the following schema:
@@ -430,10 +430,11 @@ Ensure the JSON is properly formatted and matches the schema exactly."""
         try:
             # Parse JSON and validate against the Pydantic model if Pydantic model was provided
             json_data = json.loads(json_str)
-            if issubclass(self._response_format, BaseModel):
-                return self._response_format.model_validate(json_data)
-            else:
+            if isinstance(self._response_format, dict):
                 return json_str
+            else:
+                return self._response_format.model_validate(json_data)
+
         except Exception as e:
             raise ValueError(f"Failed to parse response as valid JSON matching the schema for Structured Output: {e!s}")
 
