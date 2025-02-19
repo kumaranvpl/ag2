@@ -92,7 +92,7 @@ class BrowserUseTool(Tool):
             browser: Annotated[Browser, Depends(on(browser))],
             agent_kwargs: Annotated[dict[str, Any], Depends(on(agent_kwargs))],
         ) -> BrowserUseResult:
-            llm = BrowserUseTool._get_llm(llm_config)
+            llm = LangchainFactory.create_base_chat_model(llm_config)
 
             max_steps = agent_kwargs.pop("max_steps", 100)
 
@@ -125,9 +125,3 @@ class BrowserUseTool(Tool):
             else llm_config.get("response_format")
         )
         return Controller(output_model=response_format)
-
-    @staticmethod
-    def _get_llm(
-        llm_config: dict[str, Any],
-    ) -> Any:
-        return LangchainFactory.create_base_chat_model(llm_config)
