@@ -1,7 +1,7 @@
 codecov:
   require_ci_to_pass: yes
   notify:
-    after_n_builds: 30
+    after_n_builds: 15
     wait_for_ci: yes
 
 coverage:
@@ -12,19 +12,21 @@ coverage:
         target: auto
         threshold: 1%
         if_ci_failed: success
-        branches:
-          - main
+        base: auto
+        # branches:
+        #   - main
     patch:
       default:
         # Settings for new code in PRs
         target: auto
         threshold: 1%
         if_ci_failed: success
+        base: auto
 
 # Configure codecov bot behavior
 comment:
   # Only post comment after all builds finish
-  after_n_builds: 30
+  after_n_builds: 15
   # Hide PR comment if there are no changes
   require_changes: true
   # Add a summary header
