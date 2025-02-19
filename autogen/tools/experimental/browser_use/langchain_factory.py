@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Callable
 
-from ....import_utils import optional_import_block, skip_on_missing_imports
+from ....import_utils import optional_import_block, require_optional_import
 
 with optional_import_block():
     from langchain_anthropic import ChatAnthropic
@@ -19,7 +19,7 @@ with optional_import_block():
 __all__ = ["LangchainFactory"]
 
 
-@skip_on_missing_imports(
+@require_optional_import(
     ["langchain_anthropic", "langchain_google_genai", "langchain_ollama", "langchain_openai", "langchain_core"],
     "browser-use",
 )
