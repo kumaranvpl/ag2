@@ -76,7 +76,7 @@ class LangchainFactory(ABC):
 @LangchainFactory.register_factory()
 class ChatOpenAIFactory(LangchainFactory):
     @classmethod
-    def create(cls, first_llm_config: dict[str, Any]) -> "BaseChatModel":  # type: ignore [no-any-unimported]
+    def create(cls, first_llm_config: dict[str, Any]) -> "ChatOpenAI":  # type: ignore [no-any-unimported]
         first_llm_config = cls.prepare_config(first_llm_config)
 
         return ChatOpenAI(**first_llm_config)
@@ -89,7 +89,7 @@ class ChatOpenAIFactory(LangchainFactory):
 @LangchainFactory.register_factory()
 class DeepSeekFactory(ChatOpenAIFactory):
     @classmethod
-    def create(cls, first_llm_config: dict[str, Any]) -> "BaseChatModel":  # type: ignore [no-any-unimported]
+    def create(cls, first_llm_config: dict[str, Any]) -> "ChatOpenAI":  # type: ignore [no-any-unimported]
         if "base_url" not in first_llm_config:
             raise ValueError("base_url is required for deepseek api type.")
         return super().create(first_llm_config)
@@ -102,7 +102,7 @@ class DeepSeekFactory(ChatOpenAIFactory):
 @LangchainFactory.register_factory()
 class ChatAnthropicFactory(LangchainFactory):
     @classmethod
-    def create(cls, first_llm_config: dict[str, Any]) -> "BaseChatModel":  # type: ignore [no-any-unimported]
+    def create(cls, first_llm_config: dict[str, Any]) -> "ChatAnthropic":  # type: ignore [no-any-unimported]
         first_llm_config = cls.prepare_config(first_llm_config)
 
         return ChatAnthropic(**first_llm_config)
@@ -115,7 +115,7 @@ class ChatAnthropicFactory(LangchainFactory):
 @LangchainFactory.register_factory()
 class ChatGoogleGenerativeAIFactory(LangchainFactory):
     @classmethod
-    def create(cls, first_llm_config: dict[str, Any]) -> "BaseChatModel":  # type: ignore [no-any-unimported]
+    def create(cls, first_llm_config: dict[str, Any]) -> "ChatGoogleGenerativeAI":  # type: ignore [no-any-unimported]
         first_llm_config = cls.prepare_config(first_llm_config)
 
         return ChatGoogleGenerativeAI(**first_llm_config)
@@ -128,7 +128,7 @@ class ChatGoogleGenerativeAIFactory(LangchainFactory):
 @LangchainFactory.register_factory()
 class AzureChatOpenAIFactory(LangchainFactory):
     @classmethod
-    def create(cls, first_llm_config: dict[str, Any]) -> "BaseChatModel":  # type: ignore [no-any-unimported]
+    def create(cls, first_llm_config: dict[str, Any]) -> "AzureChatOpenAI":  # type: ignore [no-any-unimported]
         first_llm_config = cls.prepare_config(first_llm_config)
         for param in ["base_url", "api_version"]:
             if param not in first_llm_config:
@@ -145,7 +145,7 @@ class AzureChatOpenAIFactory(LangchainFactory):
 @LangchainFactory.register_factory()
 class ChatOllamaFactory(LangchainFactory):
     @classmethod
-    def create(cls, first_llm_config: dict[str, Any]) -> "BaseChatModel":  # type: ignore [no-any-unimported]
+    def create(cls, first_llm_config: dict[str, Any]) -> "ChatOllama":  # type: ignore [no-any-unimported]
         first_llm_config = cls.prepare_config(first_llm_config)
         first_llm_config["base_url"] = first_llm_config.pop("client_host", None)
         if "num_ctx" not in first_llm_config:
