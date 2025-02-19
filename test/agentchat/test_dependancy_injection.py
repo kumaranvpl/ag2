@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from autogen.agentchat import ConversableAgent, UserProxyAgent
 from autogen.tools import BaseContext, ChatContext, Depends
 
-from ..conftest import Credentials, credentials_all_llms, suppress_gemini_resource_exhausted
+from ..conftest import Credentials, credentials_without_deepseek, suppress_gemini_resource_exhausted
 
 
 class MyContext(BaseContext, BaseModel):
@@ -253,7 +253,7 @@ class TestDependencyInjection:
             "Login successful.",
         )
 
-    @pytest.mark.parametrize("credentials_from_test_param", credentials_all_llms, indirect=True)
+    @pytest.mark.parametrize("credentials_from_test_param", credentials_without_deepseek, indirect=True)
     @suppress_gemini_resource_exhausted
     @pytest.mark.parametrize("is_async", [False, True])
     @pytest.mark.asyncio

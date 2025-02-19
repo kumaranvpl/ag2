@@ -11,7 +11,7 @@ from autogen import AssistantAgent, UserProxyAgent
 from autogen.import_utils import optional_import_block, skip_on_missing_imports
 from autogen.tools.experimental.browser_use import BrowserUseResult, BrowserUseTool
 
-from ....conftest import Credentials, credentials_browser_use
+from ....conftest import Credentials, credentials_all_llms
 
 with optional_import_block():
     from browser_use import Controller
@@ -115,7 +115,7 @@ class TestBrowserUseToolOpenai:
 
     @pytest.mark.parametrize(
         "credentials_from_test_param",
-        credentials_browser_use,
+        credentials_all_llms,
         indirect=True,
     )
     @pytest.mark.asyncio

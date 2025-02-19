@@ -353,7 +353,7 @@ def credentials_from_test_param(request: pytest.FixtureRequest) -> Credentials:
     return credentials
 
 
-credentials_all_llms = [
+credentials_without_deepseek = [
     pytest.param(
         credentials_gpt_4o_mini.__name__,
         marks=pytest.mark.openai,
@@ -368,7 +368,7 @@ credentials_all_llms = [
     ),
 ]
 
-credentials_browser_use = [
+credentials_all_llms = [
     pytest.param(
         credentials_gpt_4o_mini.__name__,
         marks=pytest.mark.openai,

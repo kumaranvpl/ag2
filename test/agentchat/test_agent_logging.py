@@ -16,7 +16,7 @@ from _pytest.mark import ParameterSet
 import autogen
 import autogen.runtime_logging
 
-from ..conftest import Credentials, credentials_all_llms, suppress_gemini_resource_exhausted
+from ..conftest import Credentials, credentials_without_deepseek, suppress_gemini_resource_exhausted
 
 TEACHER_MESSAGE = """
     You are roleplaying a math teacher, and your job is to help your students with linear algebra.
@@ -174,7 +174,7 @@ def _test_two_agents_logging(
         assert row["timestamp"], "timestamp is empty"
 
 
-@pytest.mark.parametrize("credentials_fixture", credentials_all_llms)
+@pytest.mark.parametrize("credentials_fixture", credentials_without_deepseek)
 @suppress_gemini_resource_exhausted
 def test_two_agents_logging(
     credentials_fixture: ParameterSet,
@@ -267,7 +267,7 @@ def _test_groupchat_logging(credentials: Credentials, credentials2: Credentials,
     assert rows[0]["id"] == 1 and rows[0]["version_number"] == 1
 
 
-@pytest.mark.parametrize("credentials_from_test_param", credentials_all_llms, indirect=True)
+@pytest.mark.parametrize("credentials_from_test_param", credentials_without_deepseek, indirect=True)
 @suppress_gemini_resource_exhausted
 def test_groupchat_logging(
     credentials_from_test_param: Credentials,

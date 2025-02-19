@@ -13,7 +13,7 @@ from pydantic import BaseModel, ValidationError
 
 import autogen
 
-from ..conftest import Credentials
+from ..conftest import Credentials, credentials_all_llms, suppress_gemini_resource_exhausted
 
 
 class ResponseModel(BaseModel):
@@ -23,10 +23,21 @@ class ResponseModel(BaseModel):
     difficulty: float
 
 
-@pytest.mark.openai
-@pytest.mark.parametrize("response_format", [ResponseModel, ResponseModel.model_json_schema()])
-def test_structured_output(credentials_gpt_4o: Credentials, response_format):
-    config_list = credentials_gpt_4o.config_list
+@pytest.mark.parametrize(
+    "credentials_from_test_param",
+    credentials_all_llms,  # This should be a list of valid fixture names.
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "response_format",
+    [
+        ResponseModel,
+        ResponseModel.model_json_schema(),
+    ],
+)
+@suppress_gemini_resource_exhausted
+def test_structured_output(credentials_from_test_param, response_format):
+    config_list = credentials_from_test_param.config_list
 
     for config in config_list:
         config["response_format"] = response_format
@@ -57,10 +68,15 @@ def test_structured_output(credentials_gpt_4o: Credentials, response_format):
         raise AssertionError(f"Agent did not return a structured report. Exception: {e}")
 
 
-@pytest.mark.openai
+@pytest.mark.parametrize(
+    "credentials_from_test_param",
+    credentials_all_llms,
+    indirect=True,
+)
 @pytest.mark.parametrize("response_format", [ResponseModel, ResponseModel.model_json_schema()])
-def test_global_structured_output(credentials_gpt_4o: Credentials, response_format):
-    config_list = credentials_gpt_4o.config_list
+@suppress_gemini_resource_exhausted
+def test_structured_output_global(credentials_from_test_param, response_format):
+    config_list = credentials_from_test_param.config_list
 
     llm_config = {
         "config_list": config_list,
