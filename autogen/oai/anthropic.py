@@ -441,7 +441,12 @@ Ensure the JSON is properly formatted and matches the schema exactly."""
 
 def _format_json_response(response: Any) -> str:
     """Formats the JSON response for structured outputs using the format method if it exists."""
-    return response.format() if isinstance(response, FormatterProtocol) and not isinstance(response, str) else response
+    if isinstance(response, str):
+        return response
+    elif isinstance(response, FormatterProtocol):
+        return response.format()
+    else:
+        return response.model_dump_json()
 
 
 @require_optional_import("anthropic", "anthropic")

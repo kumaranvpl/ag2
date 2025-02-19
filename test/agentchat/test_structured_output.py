@@ -13,7 +13,7 @@ from pydantic import BaseModel, ValidationError
 
 import autogen
 
-from ..conftest import Credentials, credentials_all_llms, suppress_gemini_resource_exhausted
+from ..conftest import Credentials, credentials_without_deepseek, suppress_gemini_resource_exhausted
 
 
 class ResponseModel(BaseModel):
@@ -25,7 +25,7 @@ class ResponseModel(BaseModel):
 
 @pytest.mark.parametrize(
     "credentials_from_test_param",
-    credentials_all_llms,  # This should be a list of valid fixture names.
+    credentials_without_deepseek,
     indirect=True,
 )
 @pytest.mark.parametrize(
@@ -70,7 +70,7 @@ def test_structured_output(credentials_from_test_param, response_format):
 
 @pytest.mark.parametrize(
     "credentials_from_test_param",
-    credentials_all_llms,
+    credentials_without_deepseek,
     indirect=True,
 )
 @pytest.mark.parametrize("response_format", [ResponseModel, ResponseModel.model_json_schema()])
