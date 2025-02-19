@@ -26,7 +26,7 @@ coverage:
 # Configure codecov bot behavior
 comment:
   # Only post comment after all builds finish
-  after_n_builds: 15
+  after_n_builds: 30
   # Hide PR comment if there are no changes
   require_changes: true
   # Add a summary header
