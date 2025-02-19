@@ -10,7 +10,7 @@ from autogen.import_utils import optional_import_block, skip_on_missing_imports
 from autogen.tools.experimental.browser_use.langchain_factory import ChatOpenAIFactory, LangchainFactory
 
 with optional_import_block():
-    from langchain_openai import ChatOpenAI
+    from langchain_openai import AzureChatOpenAI, ChatOpenAI
 
 
 @skip_on_missing_imports(
@@ -129,10 +129,13 @@ class TestLangchainFactory:
         llm = LangchainFactory.create_base_chat_model(llm_config={"config_list": config_list})
         assert llm.__class__.__name__ == llm_class_name
         if llm_class_name == "AzureChatOpenAI":
+            assert isinstance(llm, AzureChatOpenAI)
             assert llm.azure_endpoint == base_url
         elif llm_class_name == "ChatOpenAI" and base_url:
+            assert isinstance(llm, ChatOpenAI)
             assert llm.openai_api_base == base_url
         elif base_url:
+            assert hasattr(llm, "base_url")
             assert llm.base_url == base_url
 
     @pytest.mark.parametrize(
