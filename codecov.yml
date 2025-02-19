@@ -29,7 +29,6 @@ comment: false
 ignore:
   - "test/**/*"
   - "website/**/*"
-  - "docs/**/*"
 
 github_checks:
   annotations: false
