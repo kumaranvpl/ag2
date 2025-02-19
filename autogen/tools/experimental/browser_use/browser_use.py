@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from abc import ABC, abstractmethod
 from typing import Annotated, Any, Optional
 
 from pydantic import BaseModel
@@ -11,15 +10,11 @@ from ....doc_utils import export_module
 from ....import_utils import optional_import_block, require_optional_import
 from ... import Depends, Tool
 from ...dependency_injection import on
+from .langchain_factory import LangchainFactory
 
 with optional_import_block():
     from browser_use import Agent, Controller
     from browser_use.browser.browser import Browser, BrowserConfig
-    from langchain_anthropic import ChatAnthropic
-    from langchain_google_genai import ChatGoogleGenerativeAI
-    from langchain_ollama import ChatOllama
-    from langchain_openai import AzureChatOpenAI, ChatOpenAI
-    from langchain_core.language_models import BaseChatModel
 
 
 __all__ = ["BrowserUseResult", "BrowserUseTool"]
@@ -128,7 +123,7 @@ class BrowserUseTool(Tool):
     def _get_llm(
         llm_config: dict[str, Any],
     ) -> Any:
-        return LanchainFactory.create_base_chat_model(llm_config)
+        return LangchainFactory.create_base_chat_model(llm_config)
 
         # if "config_list" not in llm_config:
         #     if "model" in llm_config:
@@ -155,7 +150,6 @@ class BrowserUseTool(Tool):
         # except (KeyError, TypeError) as e:
         #     raise ValueError(f"llm_config must be a valid config dictionary: {e}")
 
-    
         # if api_type == "openai":
         #     return ChatOpenAI(model=model, api_key=api_key)
         # elif api_type == "azure":
