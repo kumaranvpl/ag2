@@ -26,7 +26,7 @@ from autogen.tools.tool import Tool
 
 from ..conftest import (
     Credentials,
-    credentials_browser_use,
+    credentials_all_llms,
     suppress_gemini_resource_exhausted,
     suppress_json_decoder_error,
 )
@@ -1057,7 +1057,7 @@ async def _test_function_registration_e2e_async(credentials: Credentials) -> Non
     stopwatch_mock.assert_called_once_with(num_seconds="2")
 
 
-@pytest.mark.parametrize("credentials_from_test_param", credentials_browser_use, indirect=True)
+@pytest.mark.parametrize("credentials_from_test_param", credentials_all_llms, indirect=True)
 @suppress_gemini_resource_exhausted
 @pytest.mark.asyncio
 async def test_function_registration_e2e_async(
@@ -1498,7 +1498,7 @@ def test_handle_carryover():
     assert proc_content_empty_carryover == content, "Incorrect carryover processing"
 
 
-@pytest.mark.parametrize("credentials_from_test_param", credentials_browser_use, indirect=True)
+@pytest.mark.parametrize("credentials_from_test_param", credentials_all_llms, indirect=True)
 @suppress_gemini_resource_exhausted
 def test_conversable_agent_with_whitespaces_in_name_end2end(
     credentials_from_test_param: Credentials,

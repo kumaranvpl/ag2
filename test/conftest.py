@@ -363,7 +363,7 @@ def user_proxy() -> UserProxyAgent:
     )
 
 
-credentials_browser_use = [
+credentials_all_llms = [
     pytest.param(
         credentials_gpt_4o_mini.__name__,
         marks=pytest.mark.openai,
