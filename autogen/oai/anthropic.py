@@ -384,7 +384,7 @@ class AnthropicClient:
             return
 
         # Get the schema of the Pydantic model
-        if isinstance(self._response_format, BaseModel):
+        if issubclass(self._response_format, BaseModel):
             schema = self._response_format.model_json_schema()
         else:
             schema = self._response_format
@@ -430,7 +430,7 @@ Ensure the JSON is properly formatted and matches the schema exactly."""
         try:
             # Parse JSON and validate against the Pydantic model if Pydantic model was provided
             json_data = json.loads(json_str)
-            if isinstance(self._response_format, BaseModel):
+            if issubclass(self._response_format, BaseModel):
                 return self._response_format.model_validate(json_data)
             else:
                 return json_str

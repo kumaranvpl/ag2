@@ -496,7 +496,7 @@ class OllamaClient:
 
         try:
             # Parse JSON and validate against the Pydantic model if Pydantic model was provided
-            if isinstance(self._response_format, BaseModel):
+            if issubclass(self._response_format, BaseModel):
                 return self._response_format.model_validate_json(response)
             else:
                 return response
