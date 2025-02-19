@@ -359,6 +359,15 @@ def credentials_from_test_param(request: pytest.FixtureRequest) -> Credentials:
     return credentials
 
 
+@pytest.fixture
+def user_proxy() -> UserProxyAgent:
+    return UserProxyAgent(
+        name="User",
+        human_input_mode="NEVER",
+        code_execution_config=False,
+    )
+
+
 credentials_all_llms = [
     pytest.param(
         credentials_gpt_4o_mini.__name__,
