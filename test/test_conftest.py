@@ -11,10 +11,10 @@ import subprocess
 
 import pytest
 
-from .conftest import Credentials, Secrets, credentials_without_deepseek, suppress_gemini_resource_exhausted
+from .conftest import Credentials, Secrets, credentials_browser_use, suppress_gemini_resource_exhausted
 
 
-@pytest.mark.parametrize("credentials_from_test_param", credentials_without_deepseek, indirect=True)
+@pytest.mark.parametrize("credentials_from_test_param", credentials_browser_use, indirect=True)
 @suppress_gemini_resource_exhausted
 def test_credentials_from_test_param_fixture(
     credentials_from_test_param: Credentials,

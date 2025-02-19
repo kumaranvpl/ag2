@@ -12,7 +12,7 @@ import pytest
 
 import autogen
 
-from ..conftest import Credentials, credentials_without_deepseek, suppress_gemini_resource_exhausted
+from ..conftest import Credentials, credentials_browser_use, suppress_gemini_resource_exhausted
 
 
 def get_market_news(ind, ind_upper):
@@ -86,7 +86,7 @@ async def _test_async_groupchat(credentials: Credentials):
     assert len(user_proxy.chat_messages) > 0
 
 
-@pytest.mark.parametrize("credentials_from_test_param", credentials_without_deepseek, indirect=True)
+@pytest.mark.parametrize("credentials_from_test_param", credentials_browser_use, indirect=True)
 @suppress_gemini_resource_exhausted
 @pytest.mark.asyncio
 async def test_async_groupchat(
@@ -161,7 +161,7 @@ async def _test_stream(credentials: Credentials):
             # print("Chat summary and cost:", res.summary, res.cost)
 
 
-@pytest.mark.parametrize("credentials_from_test_param", credentials_without_deepseek, indirect=True)
+@pytest.mark.parametrize("credentials_from_test_param", credentials_browser_use, indirect=True)
 @suppress_gemini_resource_exhausted
 @pytest.mark.asyncio
 async def test_stream(

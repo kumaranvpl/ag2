@@ -12,7 +12,7 @@ import pytest
 
 import autogen
 
-from ..conftest import Credentials, credentials_without_deepseek, suppress_gemini_resource_exhausted
+from ..conftest import Credentials, credentials_browser_use, suppress_gemini_resource_exhausted
 
 
 async def _test_async_get_human_input(credentials: Credentials) -> None:
@@ -40,7 +40,7 @@ async def _test_async_get_human_input(credentials: Credentials) -> None:
     print("Human input:", res.human_input)
 
 
-@pytest.mark.parametrize("credentials_from_test_param", credentials_without_deepseek, indirect=True)
+@pytest.mark.parametrize("credentials_from_test_param", credentials_browser_use, indirect=True)
 @suppress_gemini_resource_exhausted
 @pytest.mark.asyncio
 async def test_async_get_human_input(
@@ -77,7 +77,7 @@ async def _test_async_max_turn(credentials: Credentials):
     )
 
 
-@pytest.mark.parametrize("credentials_from_test_param", credentials_without_deepseek, indirect=True)
+@pytest.mark.parametrize("credentials_from_test_param", credentials_browser_use, indirect=True)
 @suppress_gemini_resource_exhausted
 @pytest.mark.asyncio
 async def test_async_max_turn(

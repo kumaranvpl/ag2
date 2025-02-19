@@ -13,7 +13,7 @@ import pytest
 from autogen.agentchat import AssistantAgent, UserProxyAgent
 from autogen.tools import tool
 
-from ..conftest import Credentials, credentials_without_deepseek, suppress_gemini_resource_exhausted
+from ..conftest import Credentials, credentials_browser_use, suppress_gemini_resource_exhausted
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -56,7 +56,7 @@ def _test_ai_user_proxy_agent(credentials: Credentials) -> None:
     print("Result summary:", res.summary)
 
 
-@pytest.mark.parametrize("credentials_from_test_param", credentials_without_deepseek, indirect=True)
+@pytest.mark.parametrize("credentials_from_test_param", credentials_browser_use, indirect=True)
 @suppress_gemini_resource_exhausted
 def test_ai_user_proxy_agent(
     credentials_from_test_param: Credentials,
