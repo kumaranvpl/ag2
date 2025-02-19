@@ -125,7 +125,8 @@ class Crawl4AITool(Tool):
                 model = llm_config["model"]
                 api_type = "openai"
                 lite_llm_config = {"api_token": os.getenv("OPENAI_API_KEY")}
-            raise ValueError("llm_config must be a valid config dictionary.")
+            else:
+                raise ValueError("llm_config must be a valid config dictionary.")
         else:
             try:
                 lite_llm_config = llm_config["config_list"][0].copy()
