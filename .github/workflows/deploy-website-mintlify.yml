@@ -8,6 +8,10 @@ on:
       - "website/**"
       - ".github/workflows/deploy-website-mintlify.yml"
       - ".github/workflows/docs-check-broken-links.yml"
+      - "scripts/broken-links-check.sh"
+      - "scripts/docs_build.sh"
+      - "scripts/docs_serve.sh"
+      - ".muffet-excluded-links.txt"
   push:
     branches: [main]
     paths:
@@ -15,6 +19,10 @@ on:
       - "website/**"
       - ".github/workflows/deploy-website-mintlify.yml"
       - ".github/workflows/docs-check-broken-links.yml"
+      - "scripts/broken-links-check.sh"
+      - "scripts/docs_build.sh"
+      - "scripts/docs_serve.sh"
+      - ".muffet-excluded-links.txt"
   workflow_dispatch:
   merge_group:
     types: [checks_requested]
@@ -53,7 +61,7 @@ jobs:
         working-directory: .
 
   mintlify-release:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -88,11 +96,14 @@ jobs:
           # Create a temporary directory for filtered content
           mkdir -p temp_website
 
-          # Copy files except .ipynb, node_modules, .quarto, .gitignore, and temp_website
-          find . -type f -not -path "*/node_modules/*" -not -path "*/.quarto/*" -not -path "./temp_website/*" -not -name "*.ipynb" -not -name ".gitignore" -exec cp --parents {} temp_website/ \;
+          # Navigate to build directory
+          cd build
+
+          # Copy files except .ipynb, node_modules, .quarto, .gitignore, temp_website, _blogs, use-cases, user-guide and talks
+          find . -type f -not -path "*/node_modules/*" -not -path "*/.quarto/*" -not -path "./_blogs/*" -not -path "./use-cases/*" -not -path "./user-guide/*" -not -path "./talks/*" -not -name "*.ipynb" -not -name ".gitignore" -exec cp --parents {} ../temp_website/ \;
 
       - name: Deploy to Mintlify
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: mintlify-pages

@@ -26,6 +26,18 @@ To install `AG2`, simply run the following command:
 pip install ag2
 ```
 
+<Tip>
+If you have been using `autogen` or `pyautogen`, all you need to do is upgrade it using:
+```bash
+pip install -U autogen
+```
+or
+```bash
+pip install -U pyautogen
+```
+as `pyautogen`, `autogen`, and `ag2` are aliases for the same PyPI package.
+</Tip>
+
 ## Imports
 
 ```python
@@ -90,7 +102,7 @@ Configure the agents for the interaction.
     settings.
 
 ```python
-config_list = [{"model": "gpt-4o-mini", "api_key": os.environ["OPENAI_API_KEY"]}]
+config_list = [{"api_type": "openai", "model": "gpt-4o-mini", "api_key": os.environ["OPENAI_API_KEY"]}]
 agent = AssistantAgent(
     name="agent",
     llm_config={"config_list": config_list},

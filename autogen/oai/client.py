@@ -13,6 +13,7 @@ import re
 import sys
 import uuid
 import warnings
+from functools import lru_cache
 from typing import Any, Callable, Optional, Protocol, Union
 
 from pydantic import BaseModel
@@ -193,6 +194,11 @@ if not logger.handlers:
 LEGACY_DEFAULT_CACHE_SEED = 41
 LEGACY_CACHE_DIR = ".cache"
 OPEN_API_BASE_URL_PREFIX = "https://api.openai.com"
+
+
+@lru_cache(maxsize=128)
+def log_cache_seed_value(cache_seed_value: Union[str, int], client: "ModelClient") -> None:
+    logger.info(f"Using cache with seed value {cache_seed_value} for client {client.__class__.__name__}")
 
 
 @export_module("autogen")
@@ -384,12 +390,14 @@ class OpenAIClient:
         """
         iostream = IOStream.get_default()
 
-        if self.response_format is not None:
+        if self.response_format is not None or "response_format" in params:
 
             def _create_or_parse(*args, **kwargs):
                 if "stream" in kwargs:
                     kwargs.pop("stream")
-                kwargs["response_format"] = type_to_response_format_param(self.response_format)
+                kwargs["response_format"] = type_to_response_format_param(
+                    self.response_format or params["response_format"]
+                )
                 return self._oai_client.chat.completions.create(*args, **kwargs)
 
             create_or_parse = _create_or_parse
@@ -673,9 +681,10 @@ class OpenAIWrapper:
             config_list = [config.copy() for config in config_list]  # make a copy before modifying
             for config in config_list:
                 self._register_default_client(config, openai_config)  # could modify the config
-                self._config_list.append(
-                    {**extra_kwargs, **{k: v for k, v in config.items() if k not in self.openai_kwargs}}
-                )
+                self._config_list.append({
+                    **extra_kwargs,
+                    **{k: v for k, v in config.items() if k not in self.openai_kwargs},
+                })
         else:
             self._register_default_client(extra_kwargs, openai_config)
             self._config_list = [extra_kwargs]
@@ -893,11 +902,11 @@ class OpenAIWrapper:
                 E.g., `prompt="Complete the following sentence: {prefix}, context={"prefix": "Today I feel"}`.
                 The actual prompt will be:
                 "Complete the following sentence: Today I feel".
-                More examples can be found at [templating](/docs/Use-Cases/enhanced_inference#templating).
             - cache (AbstractCache | None): A Cache object to use for response cache. Default to None.
                 Note that the cache argument overrides the legacy cache_seed argument: if this argument is provided,
                 then the cache_seed argument is ignored. If this argument is not provided or None,
-                then the cache_seed argument is used.
+                then the cache_seed argument is used. If both cache and cache_seed are None,
+                then LEGACY_DEFAULT_CACHE_SEED is used as the cache_seed.
             - agent (AbstractAgent | None): The object responsible for creating a completion if an agent.
             - (Legacy) cache_seed (int | None) for using the DiskCache. Default to 41.
                 An integer cache_seed is useful when implementing "controlled randomness" for the completion.
@@ -914,7 +923,7 @@ class OpenAIWrapper:
         ```
 
             - allow_format_str_template (bool | None): Whether to allow format string template in the config. Default to false.
-            - api_version (str | None): The api version. Default to None. E.g., "2024-02-01".
+            - api_version (Optional[str]): The api version. Default to None. E.g., "2024-02-01".
 
         Raises:
             - RuntimeError: If all declared custom model clients are not registered
@@ -967,6 +976,8 @@ class OpenAIWrapper:
             elif cache_seed is not None:
                 # Legacy cache behavior, if cache_seed is given, use DiskCache.
                 cache_client = Cache.disk(cache_seed, LEGACY_CACHE_DIR)
+
+            log_cache_seed_value(cache if cache is not None else cache_seed, client=client)
 
             if cache_client is not None:
                 with cache_client as cache:

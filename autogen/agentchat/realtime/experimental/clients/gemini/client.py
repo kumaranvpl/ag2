@@ -6,7 +6,7 @@ import json
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from logging import Logger, getLogger
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from ......doc_utils import export_module
 from ...realtime_events import AudioDelta, FunctionCall, RealtimeEvent, SessionCreated
@@ -62,7 +62,7 @@ class GeminiRealtimeClient:
             "base_url",
             f"wss://{HOST}/ws/google.ai.generativelanguage.{API_VERSION}.GenerativeService.BidiGenerateContent?key={self._api_key}",
         )
-        self._final_config: Dict[str, Any] = {}
+        self._final_config: dict[str, Any] = {}
         self._pending_session_updates: dict[str, Any] = {}
         self._is_reading_events = False
 
@@ -77,14 +77,6 @@ class GeminiRealtimeClient:
         if self._connection is None:
             raise RuntimeError("Gemini WebSocket is not initialized")
         return self._connection
-
-    @classmethod
-    def _get__exported_module__(cls) -> str:
-        return cls.__exported_module__
-
-    @classmethod
-    def _set__exported_module__(cls, module: str) -> None:
-        cls.__exported_module__ = module
 
     async def send_function_result(self, call_id: str, result: str) -> None:
         """Send the result of a function call to the Gemini Realtime API.

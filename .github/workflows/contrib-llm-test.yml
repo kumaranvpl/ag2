@@ -4,12 +4,15 @@
 name: Contrib tests with LLMs
 
 on:
+  schedule:
+    - cron: "0 0 * * *" # daily at midnight UTC
+  workflow_dispatch: # allows manual triggering of the workflow
   pull_request_target:
     branches: ["main"]
     paths:
       - "autogen/**"
       - "test/agentchat/contrib/**"
-      - ".github/workflows/contrib-openai.yml"
+      - ".github/workflows/contrib-llm-test.yml"
       - "pyproject.toml"
 permissions:
   {}
@@ -53,9 +56,8 @@ jobs:
       - name: Install packages and dependencies
         run: |
           docker --version
-          uv pip install --system -e .[teachable,test]
-          python -c "import autogen"
-      - name: Coverage
+          uv pip install --system -e .[test,teachable]
+      - name: Run tests
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
@@ -63,7 +65,10 @@ jobs:
           OAI_CONFIG_LIST: ${{ secrets.OAI_CONFIG_LIST }}
         run: |
           bash scripts/test.sh test/agentchat/contrib/capabilities/test_teachable_agent.py
+      - name: Show coverage report
+        run: bash scripts/show-coverage-report.sh
       - name: Upload coverage to Codecov
+        if: ${{ !contains(github.ref, 'gh-readonly-queue/') }}
         uses: codecov/codecov-action@v5
         with:
           files: ./coverage.xml
@@ -109,13 +114,8 @@ jobs:
       - name: Install packages and dependencies
         run: |
           docker --version
-          uv pip install --system -e ".[test]"
-          python -c "import autogen"
-          uv pip install --system pytest-cov>=5 pytest-asyncio
-      - name: Install packages for test when needed
-        run: |
-          uv pip install --system -e .[autobuild]
-      - name: Coverage
+          uv pip install --system -e ".[test,autobuild]"
+      - name: Run tests
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
@@ -123,7 +123,10 @@ jobs:
           OAI_CONFIG_LIST: ${{ secrets.OAI_CONFIG_LIST }}
         run: |
           bash scripts/test.sh test/agentchat/contrib/test_agent_builder.py
+      - name: Show coverage report
+        run: bash scripts/show-coverage-report.sh
       - name: Upload coverage to Codecov
+        if: ${{ !contains(github.ref, 'gh-readonly-queue/') }}
         uses: codecov/codecov-action@v5
         with:
           files: ./coverage.xml
@@ -169,14 +172,16 @@ jobs:
       - name: Install packages and dependencies
         run: |
           docker --version
-          uv pip install --system -e .[lmm,test]
-          python -c "import autogen"
-      - name: Coverage
+          uv pip install --system -e .[test,lmm]
+      - name: Run tests
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           bash scripts/test.sh test/agentchat/contrib/capabilities/test_image_generation_capability.py
+      - name: Show coverage report
+        run: bash scripts/show-coverage-report.sh
       - name: Upload coverage to Codecov
+        if: ${{ !contains(github.ref, 'gh-readonly-queue/') }}
         uses: codecov/codecov-action@v5
         with:
           files: ./coverage.xml

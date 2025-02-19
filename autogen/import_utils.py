@@ -5,11 +5,10 @@
 import inspect
 import sys
 from abc import ABC, abstractmethod
-from collections.abc import Generator, Iterable
 from contextlib import contextmanager, suppress
 from functools import wraps
 from logging import getLogger
-from typing import Any, Callable, Generic, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Generator, Generic, Iterable, Optional, TypeVar, Union
 
 __all__ = ["optional_import_block", "patch_object", "require_optional_import", "skip_on_missing_imports"]
 
@@ -45,9 +44,9 @@ def optional_import_block() -> Generator[Result, None, None]:
     try:
         yield result
         result._failed = False
-    except ImportError:
+    except ImportError as e:
         # Ignore ImportErrors during this context
-        # logger.info(f"Ignoring ImportError: {e}")
+        logger.debug(f"Ignoring ImportError: {e}")
         result._failed = True
 
 
@@ -112,11 +111,11 @@ class PatchObject(ABC, Generic[T]):
         if hasattr(o, "__module__"):
             retval.__module__ = o.__module__
 
-    _registry: list[Type["PatchObject[Any]"]] = []
+    _registry: list[type["PatchObject[Any]"]] = []
 
     @classmethod
-    def register(cls) -> Callable[[Type["PatchObject[Any]"]], Type["PatchObject[Any]"]]:
-        def decorator(subclass: Type["PatchObject[Any]"]) -> Type["PatchObject[Any]"]:
+    def register(cls) -> Callable[[type["PatchObject[Any]"]], type["PatchObject[Any]"]]:
+        def decorator(subclass: type["PatchObject[Any]"]) -> type["PatchObject[Any]"]:
             cls._registry.append(subclass)
             return subclass
 
@@ -215,12 +214,12 @@ class PatchProperty(PatchObject[Any]):
 
 
 @PatchObject.register()
-class PatchClass(PatchObject[Type[Any]]):
+class PatchClass(PatchObject[type[Any]]):
     @classmethod
     def accept(cls, o: Any) -> bool:
         return inspect.isclass(o)
 
-    def patch(self) -> Type[Any]:
+    def patch(self) -> type[Any]:
         # Patch __init__ method if possible
 
         for name, member in inspect.getmembers(self.o):
@@ -256,6 +255,7 @@ def require_optional_import(modules: Union[str, Iterable[str]], dep_target: str)
 
         def decorator(o: T) -> T:
             return o
+
     else:
 
         def decorator(o: T) -> T:
@@ -283,6 +283,7 @@ def skip_on_missing_imports(modules: Union[str, Iterable[str]], dep_target: Opti
 
             pytest_mark_o = getattr(pytest.mark, mark_name)(o)
             return pytest_mark_o  # type: ignore[no-any-return]
+
     else:
 
         def decorator(o: T) -> T:

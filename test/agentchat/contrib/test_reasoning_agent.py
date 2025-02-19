@@ -4,7 +4,7 @@
 #
 # Portions derived from  https://github.com/microsoft/autogen are under the MIT License.
 # SPDX-License-Identifier: MIT
-#!/usr/bin/env python3 -m pytest
+# !/usr/bin/env python3 -m pytest
 
 import os
 import random
@@ -43,7 +43,7 @@ def think_node():
 @pytest.fixture
 def reasoning_agent():
     """Create a ReasoningAgent instance for testing"""
-    config_list = [{"model": "gpt-4o", "api_key": "fake_key"}]
+    config_list = [{"api_type": "openai", "model": "gpt-4o", "api_key": "fake_key"}]
     llm_config = {"config_list": config_list, "temperature": 0}
     return ReasoningAgent("reasoning_agent", llm_config=llm_config)
 
@@ -157,7 +157,7 @@ def test_reasoning_agent_answer():
 def helper_test_reasoning_agent_answer(max_depth, beam_size, answer_approach):
     """Test that ReasoningAgent properly terminates when TERMINATE is received"""
     mock_config = {
-        "config_list": [{"model": "gpt-4o", "api_key": "fake", "base_url": "0.0.0.0:8000"}],
+        "config_list": [{"api_type": "openai", "model": "gpt-4o", "api_key": "fake", "base_url": "0.0.0.0:8000"}],
         "temperature": 0,
     }
     with patch("autogen.agentchat.conversable_agent.ConversableAgent.generate_oai_reply") as mock_oai_reply:
@@ -270,12 +270,10 @@ def test_visualize_tree_render_failure(mock_digraph):
 
     with patch("builtins.print") as mock_print:
         visualize_tree(root)
-        mock_print.assert_has_calls(
-            [
-                call("Error rendering graph: Rendering failed"),
-                call("Make sure graphviz is installed on your system: https://graphviz.org/download/"),
-            ]
-        )
+        mock_print.assert_has_calls([
+            call("Error rendering graph: Rendering failed"),
+            call("Make sure graphviz is installed on your system: https://graphviz.org/download/"),
+        ])
 
 
 if __name__ == "__main__":
