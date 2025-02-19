@@ -9,7 +9,6 @@ coverage:
     project:
       default:
         # Basic settings
-        informational: true
         target: auto
         threshold: 1%
         base: auto
@@ -17,13 +16,21 @@ coverage:
     patch:
       default:
         # Settings for new code in PRs
-        informational: true
         target: auto
         threshold: 1%
         base: auto
 
 # Configure codecov bot behavior
-comment: false
+comment:
+  # Only post comment after all builds finish
+  after_n_builds: 15
+  # Hide PR comment if there are no changes
+  require_changes: true
+  # Add a summary header
+  layout: "diff, files"
+  hide_project_coverage: true
+  # Show coverage for changed files
+  show_carryforward_flags: true
 
 # Ignore certain paths/files
 ignore:
