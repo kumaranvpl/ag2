@@ -132,18 +132,19 @@ class BrowserUseTool(Tool):
             raise ValueError("llm_config must be a valid config dictionary.")
 
         try:
-            model = llm_config["config_list"][0]["model"]
-            api_type = llm_config["config_list"][0].get("api_type", "openai")
+            first_config = llm_config["config_list"][0]
+            model = first_config["model"]
+            api_type = first_config.get("api_type", "openai")
 
             # Ollama does not require an api_key
-            api_key = None if api_type == "ollama" else llm_config["config_list"][0]["api_key"]
+            api_key = None if api_type == "ollama" else first_config["api_key"]
 
             if api_type == "deepseek" or api_type == "azure" or api_type == "azure":
-                base_url = llm_config["config_list"][0].get("base_url")
+                base_url = first_config.get("base_url")
                 if not base_url:
                     raise ValueError(f"base_url is required for {api_type} api type.")
             if api_type == "azure":
-                api_version = llm_config["config_list"][0].get("api_version")
+                api_version = first_config.get("api_version")
                 if not api_version:
                     raise ValueError(f"api_version is required for {api_type} api type.")
 
@@ -166,6 +167,7 @@ class BrowserUseTool(Tool):
         elif api_type == "google":
             return ChatGoogleGenerativeAI(model=model, api_key=api_key)
         elif api_type == "ollama":
-            return ChatOllama(model=model, num_ctx=32000)
+            base_url = first_config.get("client_host", None)
+            return ChatOllama(model=model, base_url=base_url, num_ctx=32000)
         else:
             raise ValueError(f"Currently unsupported language model api type for browser use: {api_type}")
