@@ -398,6 +398,16 @@ credentials_all_llms = [
     ),
 ]
 
+credentials_structured_output = [
+    pytest.param(
+        credentials_gpt_4o_mini.__name__,
+        marks=pytest.mark.openai,
+    ),
+    pytest.param(
+        credentials_anthropic_claude_sonnet.__name__,
+        marks=pytest.mark.anthropic,
+    ),
+]
 
 T = TypeVar("T", bound=Callable[..., Any])
 
