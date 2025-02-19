@@ -6,13 +6,13 @@ from typing import Any
 
 import pytest
 
-from autogen.import_utils import skip_on_missing_imports
-from autogen.tools.experimental.browser_use.langchain_factory import LangchainFactory
+from autogen.import_utils import optional_import_block, skip_on_missing_imports
+from autogen.tools.experimental.browser_use.langchain_factory import ChatOpenAIFactory, LangchainFactory
 
-# with optional_import_block():
-#     from langchain_core.language_models import BaseChatModel
-#     from langchain_ollama import ChatOllama
-#     from langchain_openai import AzureChatOpenAI, ChatOpenAI
+with optional_import_block():
+    from langchain_openai import ChatOpenAI
+
+test_api_key = "test"  # pragma: allowlist secret
 
 
 @skip_on_missing_imports(
@@ -24,16 +24,21 @@ class TestLangchainFactory:
         ("llm_config", "expected"),
         [
             (
-                {"model": "gpt-4o-mini", "api_key": "test"},
-                {"model": "gpt-4o-mini", "api_key": "test"},
+                {"model": "gpt-4o-mini", "api_key": test_api_key},
+                {"model": "gpt-4o-mini", "api_key": test_api_key},
             ),
             (
-                {"config_list": [{"model": "gpt-4o-mini", "api_key": "test"}]},
-                {"model": "gpt-4o-mini", "api_key": "test"},
+                {"config_list": [{"model": "gpt-4o-mini", "api_key": test_api_key}]},
+                {"model": "gpt-4o-mini", "api_key": test_api_key},
             ),
             (
-                {"config_list": [{"model": "gpt-4o-mini", "api_key": "test"}, {"model": "gpt-4o", "api_key": "test2"}]},
-                {"model": "gpt-4o-mini", "api_key": "test"},
+                {
+                    "config_list": [
+                        {"model": "gpt-4o-mini", "api_key": test_api_key},
+                        {"model": "gpt-4o", "api_key": test_api_key},
+                    ]
+                },
+                {"model": "gpt-4o-mini", "api_key": test_api_key},
             ),
         ],
     )
@@ -52,24 +57,17 @@ class TestLangchainFactory:
             LangchainFactory.get_first_llm_config(llm_config)
 
 
-# @skip_on_missing_imports(
-#     ["langchain_anthropic", "langchain_google_genai", "langchain_ollama", "langchain_openai", "langchain_core"],
-#     "browser-use",
-# )
-# class TestChatOpenAIFactory:
-#     @pytest.mark.parametrize(
-#         ("llm_config", "expected"),
-#         [
-#             (
-#                 {"model": "gpt-4o-mini", "api_key": "test"},
-#                 {"model": "gpt-4o-mini", "api_key": "test"},
-#             ),
-#             (
-#                 {"config_list": [{"model": "gpt-4o-mini", "api_key": "test"}]},
-#                 {"model": "gpt-4o-mini", "api_key": "test"},
-#             ),
-#         ],
-#     )
-#     def test_create(self, llm_config: dict[str, Any], expected: dict[str, Any]) -> None:
-#         pass
-# assert isinstance(LangchainFactory.create(llm_config), ChatOpenAI)
+@skip_on_missing_imports(
+    ["langchain_anthropic", "langchain_google_genai", "langchain_ollama", "langchain_openai", "langchain_core"],
+    "browser-use",
+)
+class TestChatOpenAIFactory:
+    @pytest.mark.parametrize(
+        "llm_config",
+        [
+            {"model": "gpt-4o-mini", "api_key": test_api_key},
+            {"config_list": [{"model": "gpt-4o-mini", "api_key": test_api_key}]},
+        ],
+    )
+    def test_create(self, llm_config: dict[str, Any]) -> None:
+        assert isinstance(ChatOpenAIFactory.create(llm_config), ChatOpenAI)

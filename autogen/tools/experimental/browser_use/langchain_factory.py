@@ -8,11 +8,11 @@ from typing import Any, Callable
 from ....import_utils import optional_import_block, skip_on_missing_imports
 
 with optional_import_block():
-    from langchain_anthropic import ChatAnthropic  # noqa
-    from langchain_google_genai import ChatGoogleGenerativeAI  # noqa
+    from langchain_anthropic import ChatAnthropic
+    from langchain_core.language_models import BaseChatModel
+    from langchain_google_genai import ChatGoogleGenerativeAI
     from langchain_ollama import ChatOllama
     from langchain_openai import AzureChatOpenAI, ChatOpenAI
-    from langchain_core.language_models import BaseChatModel
 
 
 __all__ = ["LangchainFactory"]
@@ -27,9 +27,10 @@ class LangchainFactory(ABC):
 
     @classmethod
     def create_base_chat_model(cls, llm_config: dict[str, Any]) -> BaseChatModel:  # type: ignore [no-any-unimported]
+        first_llm_config = cls.get_first_llm_config(llm_config)
         for factory in LangchainFactory._factories:
-            if factory.accepts(llm_config):
-                return factory.create(llm_config)
+            if factory.accepts(first_llm_config):
+                return factory.create(first_llm_config)
 
         raise ValueError("Could not find a factory for the given config.")
 
@@ -54,8 +55,13 @@ class LangchainFactory(ABC):
         return llm_config["config_list"][0]  # type: ignore [no-any-return]
 
     @classmethod
+    def prepare_config(cls, first_llm_config: dict[str, Any]) -> dict[str, Any]:
+        first_llm_config.pop("api_type", "openai")
+        return first_llm_config
+
+    @classmethod
     @abstractmethod
-    def create(cls, llm_config: dict[str, Any]) -> BaseChatModel:  # type: ignore [no-any-unimported]
+    def create(cls, first_llm_config: dict[str, Any]) -> BaseChatModel:  # type: ignore [no-any-unimported]
         ...
 
     @classmethod
@@ -63,60 +69,90 @@ class LangchainFactory(ABC):
     def get_api_type(cls) -> str: ...
 
     @classmethod
-    def accepts(cls, llm_config: dict[str, Any]) -> bool:
-        config = llm_config["config_list"][0]
-        return config.get("api_type", "openai") == cls.get_api_type()  # type: ignore [no-any-return]
+    def accepts(cls, first_llm_config: dict[str, Any]) -> bool:
+        return first_llm_config.get("api_type", "openai") == cls.get_api_type()  # type: ignore [no-any-return]
 
 
-@skip_on_missing_imports(
-    ["langchain_anthropic", "langchain_google_genai", "langchain_ollama", "langchain_openai", "langchain_core"],
-    "browser-use",
-)
 @LangchainFactory.register_factory()
 class ChatOpenAIFactory(LangchainFactory):
     @classmethod
-    def create(cls, llm_config: dict[str, Any]) -> BaseChatModel:  # type: ignore [no-any-unimported]
-        config = llm_config["config_list"][0]
-        config.pop("api_type", "openai")
+    def create(cls, first_llm_config: dict[str, Any]) -> BaseChatModel:  # type: ignore [no-any-unimported]
+        first_llm_config = cls.prepare_config(first_llm_config)
 
-        return ChatOpenAI(**config)
+        return ChatOpenAI(**first_llm_config)
 
     @classmethod
     def get_api_type(cls) -> str:
-        return "ollama"
+        return "openai"
 
 
-@skip_on_missing_imports(
-    ["langchain_anthropic", "langchain_google_genai", "langchain_ollama", "langchain_openai", "langchain_core"],
-    "browser-use",
-)
+@LangchainFactory.register_factory()
+class DeepSeekFactory(ChatOpenAIFactory):
+    @classmethod
+    def create(cls, first_llm_config: dict[str, Any]) -> BaseChatModel:  # type: ignore [no-any-unimported]
+        if "base_url" not in first_llm_config:
+            raise ValueError("base_url is required for deepseek api type.")
+        return super().create(first_llm_config)
+
+    @classmethod
+    def get_api_type(cls) -> str:
+        return "deepseek"
+
+
+@LangchainFactory.register_factory()
+class ChatAnthropicFactory(LangchainFactory):
+    @classmethod
+    def create(cls, first_llm_config: dict[str, Any]) -> BaseChatModel:  # type: ignore [no-any-unimported]
+        first_llm_config = cls.prepare_config(first_llm_config)
+
+        return ChatAnthropic(**first_llm_config)
+
+    @classmethod
+    def get_api_type(cls) -> str:
+        return "anthropic"
+
+
+@LangchainFactory.register_factory()
+class ChatGoogleGenerativeAIFactory(LangchainFactory):
+    @classmethod
+    def create(cls, first_llm_config: dict[str, Any]) -> BaseChatModel:  # type: ignore [no-any-unimported]
+        first_llm_config = cls.prepare_config(first_llm_config)
+
+        return ChatGoogleGenerativeAI(**first_llm_config)
+
+    @classmethod
+    def get_api_type(cls) -> str:
+        return "google"
+
+
 @LangchainFactory.register_factory()
 class AzureChatOpenAIFactory(LangchainFactory):
     @classmethod
-    def create(cls, llm_config: dict[str, Any]) -> BaseChatModel:  # type: ignore [no-any-unimported]
-        config = llm_config["config_list"][0]
-        config.pop("api_type", "openai")
+    def create(cls, first_llm_config: dict[str, Any]) -> BaseChatModel:  # type: ignore [no-any-unimported]
+        first_llm_config = cls.prepare_config(first_llm_config)
+        for param in ["base_url", "api_version"]:
+            if param not in first_llm_config:
+                raise ValueError(f"{param} is required for azure api type.")
+        first_llm_config["azure_endpoint"] = first_llm_config.pop("base_url")
 
-        return AzureChatOpenAI(**config)
+        return AzureChatOpenAI(**first_llm_config)
 
     @classmethod
     def get_api_type(cls) -> str:
-        return "ollama"
+        return "azure"
 
 
-@skip_on_missing_imports(
-    ["langchain_anthropic", "langchain_google_genai", "langchain_ollama", "langchain_openai", "langchain_core"],
-    "browser-use",
-)
 @LangchainFactory.register_factory()
 class ChatOllamaFactory(LangchainFactory):
     @classmethod
-    def create(cls, llm_config: dict[str, Any]) -> BaseChatModel:  # type: ignore [no-any-unimported]
-        config = llm_config["config_list"][0]
-        config.pop("api_type", "openai")
-        config["base_url"] = config.pop("client_host", None)
+    def create(cls, first_llm_config: dict[str, Any]) -> BaseChatModel:  # type: ignore [no-any-unimported]
+        first_llm_config = cls.prepare_config(first_llm_config)
+        first_llm_config["base_url"] = first_llm_config.pop("client_host", None)
+        if "num_ctx" not in first_llm_config:
+            # In all Browser Use examples, num_ctx is set to 32000
+            first_llm_config["num_ctx"] = 32000
 
-        return ChatOllama(**config)
+        return ChatOllama(**first_llm_config)
 
     @classmethod
     def get_api_type(cls) -> str:
