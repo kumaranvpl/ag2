@@ -13,7 +13,23 @@ from pydantic import BaseModel, ValidationError
 
 import autogen
 
-from ..conftest import Credentials, credentials_structured_output, suppress_gemini_resource_exhausted
+from ..conftest import (
+    Credentials,
+    credentials_anthropic_claude_sonnet,
+    credentials_gpt_4o_mini,
+    suppress_gemini_resource_exhausted,
+)
+
+credentials_structured_output = [
+    pytest.param(
+        credentials_gpt_4o_mini.__name__,
+        marks=pytest.mark.openai,
+    ),
+    pytest.param(
+        credentials_anthropic_claude_sonnet.__name__,
+        marks=pytest.mark.anthropic,
+    ),
+]
 
 
 class ResponseModel(BaseModel):

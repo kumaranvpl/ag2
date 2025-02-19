@@ -999,7 +999,6 @@ class OpenAIWrapper:
             if cache_client is not None:
                 with cache_client as cache:
                     # Try to get the response from cache
-                    print(params)
                     key = get_key(
                         {
                             **params,
