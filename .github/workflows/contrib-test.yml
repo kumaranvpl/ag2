@@ -33,7 +33,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest]
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.9"]
         exclude:
           - os: macos-latest
             python-version: "3.9"
@@ -74,7 +74,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.9"]
     services:
       pgvector:
         image: ankane/pgvector
@@ -216,7 +216,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           files: ./coverage.xml
-          flags: ${{ matrix.python-version }}, ${{ matrix.os }}
+          flags: agent-eval-test, ${{ matrix.python-version }}, ${{ matrix.os }}
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -255,7 +255,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           files: ./coverage.xml
-          flags: ${{ matrix.os }}, ${{ matrix.python-version }}
+          flags: gpt-assistant-agent, ${{ matrix.os }}, ${{ matrix.python-version }}
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -304,7 +304,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9"]
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -388,7 +388,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9"]
         exclude:
           - os: macos-latest
             python-version: "3.9"
@@ -495,7 +495,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           files: ./coverage.xml
-          flags: ${{ matrix.os }}, ${{ matrix.python-version }}
+          flags: llama-index-agent, ${{ matrix.os }}, ${{ matrix.python-version }}
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -505,7 +505,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest", "windows-latest", "macos-latest"]
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9"]
 
     steps:
       - uses: actions/checkout@v4
@@ -549,7 +549,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9"]
         exclude:
           - os: macos-latest
             python-version: "3.9"
@@ -593,7 +593,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9"]
         exclude:
           - os: macos-latest
             python-version: "3.9"
@@ -637,7 +637,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9"]
         exclude:
           - os: macos-latest
             python-version: "3.9"
@@ -681,7 +681,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9"]
         exclude:
           - os: macos-latest
             python-version: "3.9"
@@ -724,7 +724,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9"]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -765,7 +765,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9"]
         exclude:
           - os: macos-latest
             python-version: "3.9"
@@ -809,7 +809,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9"]
         exclude:
           - os: macos-latest
             python-version: "3.9"
@@ -853,7 +853,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9"]
         exclude:
           - os: macos-latest
             python-version: "3.9"
@@ -887,7 +887,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           files: ./coverage.xml
-          flags: ${{ matrix.os }}, ${{ matrix.python-version }}
+          flags: swarm-test, ${{ matrix.os }}, ${{ matrix.python-version }}
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -897,7 +897,7 @@ jobs:
         fail-fast: false
         matrix:
           os: [ubuntu-latest, macos-latest, windows-latest]
-          python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+          python-version: ["3.9"]
           exclude:
             - os: macos-latest
               python-version: "3.9"
@@ -942,6 +942,6 @@ jobs:
           uses: codecov/codecov-action@v5
           with:
             files: ./coverage.xml
-            flags: ${{ matrix.os }}, ${{ matrix.python-version }}
+            flags: reasoning-test, ${{ matrix.os }}, ${{ matrix.python-version }}
             fail_ci_if_error: true
             token: ${{ secrets.CODECOV_TOKEN }}
