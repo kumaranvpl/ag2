@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from autogen.dummy import add, ag2_ceil, mul, sub
+from autogen.dummy import add, ag2_ceil, div, mul, sub
 
 
 def test_add() -> None:
@@ -20,6 +20,12 @@ def test_sub() -> None:
 def test_mul() -> None:
     actual = mul(3, 5)
     expected = 15
+    assert actual == expected
+
+
+def test_div() -> None:
+    actual = div(10, 5)
+    expected = 2
     assert actual == expected
 
 
