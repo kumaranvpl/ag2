@@ -181,6 +181,7 @@
             "docs/user-guide/reference-agents/index",
             "docs/user-guide/reference-agents/captainagent",
             "docs/user-guide/reference-agents/communication-agents",
+            "docs/user-guide/reference-agents/documentagent",
             "docs/user-guide/reference-agents/reasoningagent",
             "docs/user-guide/reference-agents/websurferagent"
           ]
@@ -234,6 +235,7 @@
             "docs/use-cases/notebooks/notebooks/agentchat_teachable_oai_assistants",
             "docs/use-cases/notebooks/notebooks/tools_interoperability",
             "docs/use-cases/notebooks/notebooks/agentchat_realtime_websocket",
+            "docs/use-cases/notebooks/notebooks/agents_document_agent",
             "docs/use-cases/notebooks/notebooks/agentchat_RetrieveChat_pgvector",
             "docs/use-cases/notebooks/notebooks/agentchat_oai_assistant_twoagents_basic",
             "docs/use-cases/notebooks/notebooks/agentchat_nestedchat",
@@ -286,6 +288,7 @@
             "docs/use-cases/notebooks/notebooks/agentchat_MathChat",
             "docs/use-cases/notebooks/notebooks/agentchat_small_llm_rag_planning",
             "docs/use-cases/notebooks/notebooks/agentchat_groupchat_RAG",
+            "docs/use-cases/notebooks/notebooks/agentchat_structured_outputs_from_config",
             "docs/use-cases/notebooks/notebooks/agentchat_assistant_agent_standalone",
             "docs/use-cases/notebooks/notebooks/agentchat_nested_chats_chess",
             "docs/use-cases/notebooks/notebooks/agentchat_swarm",
@@ -844,6 +847,12 @@
                     {
                       "group": "graph_rag",
                       "pages": [
+                        "docs/api-reference/autogen/agentchat/contrib/graph_rag/overview",
+                        "docs/api-reference/autogen/agentchat/contrib/graph_rag/Document",
+                        "docs/api-reference/autogen/agentchat/contrib/graph_rag/DocumentType",
+                        "docs/api-reference/autogen/agentchat/contrib/graph_rag/GraphQueryEngine",
+                        "docs/api-reference/autogen/agentchat/contrib/graph_rag/GraphRagCapability",
+                        "docs/api-reference/autogen/agentchat/contrib/graph_rag/GraphStoreQueryResult",
                         {
                           "group": "document",
                           "pages": [
@@ -961,23 +970,7 @@
                       "group": "rag",
                       "pages": [
                         "docs/api-reference/autogen/agentchat/contrib/rag/overview",
-                        "docs/api-reference/autogen/agentchat/contrib/rag/handle_input",
-                        {
-                          "group": "docling_query_engine",
-                          "pages": [
-                            "docs/api-reference/autogen/agentchat/contrib/rag/docling_query_engine/overview",
-                            "docs/api-reference/autogen/agentchat/contrib/rag/docling_query_engine/DoclingMdQueryEngine"
-                          ]
-                        },
-                        {
-                          "group": "document_utils",
-                          "pages": [
-                            "docs/api-reference/autogen/agentchat/contrib/rag/document_utils/overview",
-                            "docs/api-reference/autogen/agentchat/contrib/rag/document_utils/download_url",
-                            "docs/api-reference/autogen/agentchat/contrib/rag/document_utils/is_url",
-                            "docs/api-reference/autogen/agentchat/contrib/rag/document_utils/list_files"
-                          ]
-                        }
+                        "docs/api-reference/autogen/agentchat/contrib/rag/VectorDbQueryEngine"
                       ]
                     },
                     {
@@ -1108,6 +1101,7 @@
                       "group": "experimental",
                       "pages": [
                         "docs/api-reference/autogen/agentchat/realtime/experimental/overview",
+                        "docs/api-reference/autogen/agentchat/realtime/experimental/AudioObserver",
                         "docs/api-reference/autogen/agentchat/realtime/experimental/FunctionObserver",
                         "docs/api-reference/autogen/agentchat/realtime/experimental/RealtimeAgent",
                         "docs/api-reference/autogen/agentchat/realtime/experimental/RealtimeObserver",
@@ -1158,6 +1152,7 @@
                             "docs/api-reference/autogen/agentchat/realtime/experimental/realtime_events/overview",
                             "docs/api-reference/autogen/agentchat/realtime/experimental/realtime_events/AudioDelta",
                             "docs/api-reference/autogen/agentchat/realtime/experimental/realtime_events/FunctionCall",
+                            "docs/api-reference/autogen/agentchat/realtime/experimental/realtime_events/InputAudioBufferDelta",
                             "docs/api-reference/autogen/agentchat/realtime/experimental/realtime_events/RealtimeEvent",
                             "docs/api-reference/autogen/agentchat/realtime/experimental/realtime_events/SessionCreated",
                             "docs/api-reference/autogen/agentchat/realtime/experimental/realtime_events/SessionUpdated",
@@ -1194,9 +1189,35 @@
                     "docs/api-reference/autogen/agents/experimental/overview",
                     "docs/api-reference/autogen/agents/experimental/DeepResearchAgent",
                     "docs/api-reference/autogen/agents/experimental/DiscordAgent",
+                    "docs/api-reference/autogen/agents/experimental/DoclingDocIngestAgent",
+                    "docs/api-reference/autogen/agents/experimental/DocumentAgent",
                     "docs/api-reference/autogen/agents/experimental/SlackAgent",
                     "docs/api-reference/autogen/agents/experimental/TelegramAgent",
-                    "docs/api-reference/autogen/agents/experimental/WebSurferAgent"
+                    "docs/api-reference/autogen/agents/experimental/WebSurferAgent",
+                    {
+                      "group": "document_agent",
+                      "pages": [
+                        "docs/api-reference/autogen/agents/experimental/document_agent/overview",
+                        "docs/api-reference/autogen/agents/experimental/document_agent/handle_input",
+                        {
+                          "group": "docling_query_engine",
+                          "pages": [
+                            "docs/api-reference/autogen/agents/experimental/document_agent/docling_query_engine/overview",
+                            "docs/api-reference/autogen/agents/experimental/document_agent/docling_query_engine/DoclingMdQueryEngine"
+                          ]
+                        },
+                        {
+                          "group": "document_utils",
+                          "pages": [
+                            "docs/api-reference/autogen/agents/experimental/document_agent/document_utils/overview",
+                            "docs/api-reference/autogen/agents/experimental/document_agent/document_utils/download_url",
+                            "docs/api-reference/autogen/agents/experimental/document_agent/document_utils/is_url",
+                            "docs/api-reference/autogen/agents/experimental/document_agent/document_utils/list_files",
+                            "docs/api-reference/autogen/agents/experimental/document_agent/document_utils/preprocess_path"
+                          ]
+                        }
+                      ]
+                    }
                   ]
                 }
               ]
@@ -1348,17 +1369,6 @@
               "pages": [
                 "docs/api-reference/autogen/doc_utils/overview",
                 "docs/api-reference/autogen/doc_utils/export_module"
-              ]
-            },
-            {
-              "group": "dummy",
-              "pages": [
-                "docs/api-reference/autogen/dummy/overview",
-                "docs/api-reference/autogen/dummy/add",
-                "docs/api-reference/autogen/dummy/ag2_ceil",
-                "docs/api-reference/autogen/dummy/div",
-                "docs/api-reference/autogen/dummy/mul",
-                "docs/api-reference/autogen/dummy/sub"
               ]
             },
             {
@@ -1721,7 +1731,14 @@
                       "group": "browser_use",
                       "pages": [
                         "docs/api-reference/autogen/tools/experimental/browser_use/overview",
-                        "docs/api-reference/autogen/tools/experimental/browser_use/BrowserUseResult"
+                        "docs/api-reference/autogen/tools/experimental/browser_use/BrowserUseResult",
+                        {
+                          "group": "langchain_factory",
+                          "pages": [
+                            "docs/api-reference/autogen/tools/experimental/browser_use/langchain_factory/overview",
+                            "docs/api-reference/autogen/tools/experimental/browser_use/langchain_factory/LangchainFactory"
+                          ]
+                        }
                       ]
                     }
                   ]
