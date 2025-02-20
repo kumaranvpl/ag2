@@ -9,6 +9,8 @@ on:
       - "Core tests without LLMs"
       - "Integration tests"
       - "Test with optional dependencies"
+    branches:
+      - '*'
     types:
       - completed
 
