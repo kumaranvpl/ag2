@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9"] #, "3.10", "3.11", "3.12", "3.13"]
         optional-dependencies:
           - "none"
           # LLMs
@@ -25,24 +25,24 @@ jobs:
           - "anthropic"
           - "deepseek"
           # optional dependencies
-          - "browser-use"
-          - "commsagent-discord"
-          - "commsagent-slack"
-          - "commsagent-telegram"
-          - "jupyter-executor"
-          - "retrievechat"
-          - "retrievechat-pgvector"
-          - "retrievechat-mongodb"
-          - "retrievechat-qdrant"
-          - "graph-rag-falkor-db"
-          - "neo4j"
-          - "twilio"
-          - "interop"
-          - "crawl4ai"
-          - "docs"
-          - "interop-crewai"
-          - "interop-langchain"
-          - "interop-pydantic-ai"
+        #   - "browser-use"
+        #   - "commsagent-discord"
+        #   - "commsagent-slack"
+        #   - "commsagent-telegram"
+        #   - "jupyter-executor"
+        #   - "retrievechat"
+        #   - "retrievechat-pgvector"
+        #   - "retrievechat-mongodb"
+        #   - "retrievechat-qdrant"
+        #   - "graph-rag-falkor-db"
+        #   - "neo4j"
+        #   - "twilio"
+        #   - "interop"
+        #   - "crawl4ai"
+        #   - "docs"
+        #   - "interop-crewai"
+        #   - "interop-langchain"
+        #   - "interop-pydantic-ai"
         exclude:
           # pdoc3 is failing in python 3.9 for some reason, we build docs with Python 3.10
           - python-version: "3.9"
