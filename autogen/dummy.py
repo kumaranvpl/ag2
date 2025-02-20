@@ -27,3 +27,7 @@ def div(a: int, b: int) -> int:
 
 def mod(a: int, b: int) -> int:
     return a % b
+
+
+def ag2_floor(x: float) -> int:
+    return int(x)
