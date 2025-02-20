@@ -39,5 +39,16 @@ ignore:
   - "test/**/*"
   - "website/**/*"
 
+flag_management:
+  default_rules: # the rules that will be followed for any flag added, generally
+    carryforward: true
+    statuses:
+      - type: project
+        target: auto
+        threshold: 1%
+      - type: patch
+        target: auto
+        threshold: 1%
+
 github_checks:
   annotations: false
