@@ -23,7 +23,7 @@ jobs:
     if: github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Send Codecov notification
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           run_command: send-notifications
           token: ${{ secrets.CODECOV_TOKEN }}
