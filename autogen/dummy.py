@@ -15,3 +15,7 @@ def ag2_ceil(x: float) -> int:
 
 def sub(a: int, b: int) -> int:
     return a - b
+
+
+def mul(a: int, b: int) -> int:
+    return a * b
