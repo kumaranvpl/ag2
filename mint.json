@@ -1356,6 +1356,8 @@
                 "docs/api-reference/autogen/dummy/overview",
                 "docs/api-reference/autogen/dummy/add",
                 "docs/api-reference/autogen/dummy/ag2_ceil",
+                "docs/api-reference/autogen/dummy/div",
+                "docs/api-reference/autogen/dummy/mul",
                 "docs/api-reference/autogen/dummy/sub"
               ]
             },
